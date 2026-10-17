@@ -1,0 +1,18 @@
+name: Keep Supabase awake
+
+# Supabase mette in pausa i progetti gratuiti dopo 7 giorni di inattività.
+# Questo workflow chiama /api/health due volte a settimana: la health route
+# esegue una vera query sul database, che conta come attività.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1,4" # lunedì e giovedì alle 06:00 UTC
+  workflow_dispatch: # consente l'esecuzione manuale da GitHub → Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        # ⚠️ Sostituisci con l'URL reale del sito su Vercel
+        run: curl -fsS "https://IL-TUO-SITO.vercel.app/api/health"

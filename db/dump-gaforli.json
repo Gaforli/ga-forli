@@ -1,0 +1,43 @@
+{
+  "events": [
+    {
+      "date": "2026-10-17",
+      "time": "",
+      "title": "Libero",
+      "cat": "comunita",
+      "desc": "Sabato libero",
+      "image": ""
+    },
+    {
+      "date": "2026-10-24",
+      "time": "",
+      "title": "Chiusura del sabato GA",
+      "cat": "spiritualita",
+      "desc": "Meditazione, cena e film.",
+      "image": ""
+    },
+    {
+      "date": "2026-10-31",
+      "time": "",
+      "title": "Serata giochi anti-Halloween",
+      "cat": "comunita",
+      "desc": "GA e Compagnon",
+      "image": "assets/ev_giochi.jpg"
+    }
+  ],
+  "content": [
+    {
+      "id": 1,
+      "key": "tema",
+      "value": "{\"title\":\"La salute, a 360°\",\"tag\":\"Corpo, mente, cuore e spirito\",\"body\":\"Parleremo di salute fisica.\\nDel nostro corpo, del movimento, del sonno, delle nostre abitudini e di quanto spesso chiediamo tantissimo al nostro organismo senza prendercene realmente cura.\\n\\nParleremo di alimentazione.\\nNon soltanto di cosa è giusto o sbagliato mangiare, ma del rapporto che abbiamo con il cibo e delle scelte che possono aiutarci a stare meglio.\\n\\nParleremo di salute emotiva e mentale.\\nAnsia, stress, pressioni, aspettative, relazioni, autostima, momenti nei quali siamo stanchi anche se apparentemente non abbiamo fatto niente.\\n\\nE parleremo naturalmente di salute spirituale.\\nPerché anche la nostra relazione con Dio può essere forte, debole, trascurata, nutrita oppure affamata.\"}",
+      "updatedAt": "2026-10-08T12:26:57.000Z"
+    }
+  ],
+  "admins": [
+    {
+      "email": "direttore@gaforli.it",
+      "passwordHash": "ec570533d06a0ee92d85278ad1c48d0c:66da8420c2b9cc20e9d715041b9faa0be30b0009bddc5efe3672d99cd8ef2c5bea11879c38501116ff533aa9a4170b68b412e44579b36c34141d64b5d2f977fb",
+      "name": "Direttore GA"
+    }
+  ]
+}
