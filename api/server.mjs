@@ -1534,7 +1534,7 @@ var init_serve_static = __esm({
   }
 });
 
-// ../../../../tmp/bundler/server/lib/vite.ts
+// ../../../../tmp/bundler3/server/lib/vite.ts
 var vite_exports = {};
 __export(vite_exports, {
   serveStaticFiles: () => serveStaticFiles
@@ -1555,7 +1555,7 @@ function serveStaticFiles(app2) {
   });
 }
 var init_vite = __esm({
-  "../../../../tmp/bundler/server/lib/vite.ts"() {
+  "../../../../tmp/bundler3/server/lib/vite.ts"() {
     init_serve_static();
   }
 });
@@ -9246,7 +9246,7 @@ function mapRelationalRow(tablesConfig, tableConfig, row, buildQueryResultSelect
   return result;
 }
 
-// ../../../../tmp/bundler/server/auth-router.ts
+// ../../../../tmp/bundler3/server/auth-router.ts
 var cookie = __toESM(require_dist());
 
 // node_modules/zod/v4/classic/external.js
@@ -23017,7 +23017,7 @@ function date5(params) {
 // node_modules/zod/v4/classic/external.js
 config(en_default());
 
-// ../../../../tmp/bundler/contracts/constants.ts
+// ../../../../tmp/bundler3/contracts/constants.ts
 var Session = {
   cookieName: "kimi_sid",
   maxAgeMs: 365 * 24 * 60 * 60 * 1e3
@@ -23027,7 +23027,7 @@ var ErrorMessages = {
   insufficientRole: "Insufficient permissions"
 };
 
-// ../../../../tmp/bundler/server/lib/cookies.ts
+// ../../../../tmp/bundler3/server/lib/cookies.ts
 function isLocalhost(headers) {
   const host = headers.get("host") || "";
   return host.startsWith("localhost:") || host.startsWith("127.0.0.1:");
@@ -24189,7 +24189,7 @@ var registerCustom = SuperJSON.registerCustom;
 var registerSymbol = SuperJSON.registerSymbol;
 var allowErrorProps = SuperJSON.allowErrorProps;
 
-// ../../../../tmp/bundler/server/middleware.ts
+// ../../../../tmp/bundler3/server/middleware.ts
 var t = initTRPC.context().create({
   transformer: dist_default
 });
@@ -25571,7 +25571,7 @@ var SignJWT = class {
   );
 })();
 
-// ../../../../tmp/bundler/server/lib/env.ts
+// ../../../../tmp/bundler3/server/lib/env.ts
 function required2(name) {
   const value = process.env[name];
   if (!value && process.env.NODE_ENV === "production") {
@@ -25588,7 +25588,7 @@ var env = {
   ownerUnionId: process.env.OWNER_UNION_ID ?? ""
 };
 
-// ../../../../tmp/bundler/server/session.ts
+// ../../../../tmp/bundler3/server/session.ts
 var JWT_ALG = "HS256";
 async function signSessionToken(payload) {
   const secret = new TextEncoder().encode(env.appSecret);
@@ -25609,7 +25609,7 @@ async function verifySessionToken(token) {
   }
 }
 
-// ../../../../tmp/bundler/db/schema.ts
+// ../../../../tmp/bundler3/db/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
   adminAccounts: () => adminAccounts,
@@ -28990,7 +28990,7 @@ var PgTransaction = class extends PgDatabase {
   }
 };
 
-// ../../../../tmp/bundler/db/schema.ts
+// ../../../../tmp/bundler3/db/schema.ts
 var roleEnum = pgEnum("role", ["user", "admin"]);
 var eventCatEnum = pgEnum("event_cat", [
   "spiritualita",
@@ -31334,10 +31334,10 @@ function drizzle(...params) {
   drizzle2.mock = mock;
 })(drizzle || (drizzle = {}));
 
-// ../../../../tmp/bundler/db/relations.ts
+// ../../../../tmp/bundler3/db/relations.ts
 var relations_exports = {};
 
-// ../../../../tmp/bundler/server/queries/connection.ts
+// ../../../../tmp/bundler3/server/queries/connection.ts
 var fullSchema = { ...schema_exports, ...relations_exports };
 var instance;
 function getDb() {
@@ -31348,7 +31348,7 @@ function getDb() {
   return instance;
 }
 
-// ../../../../tmp/bundler/server/queries/users.ts
+// ../../../../tmp/bundler3/server/queries/users.ts
 async function findUserByUnionId(unionId) {
   const rows = await getDb().select().from(users).where(eq(users.unionId, unionId)).limit(1);
   return rows.at(0);
@@ -31366,7 +31366,7 @@ async function upsertUser(data) {
   await getDb().insert(users).values(values2).onConflictDoUpdate({ target: users.unionId, set: updateSet });
 }
 
-// ../../../../tmp/bundler/server/local-auth.ts
+// ../../../../tmp/bundler3/server/local-auth.ts
 import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
 function scryptAsync(password, salt) {
   return new Promise((resolve, reject) => {
@@ -31392,7 +31392,7 @@ async function findAdminByEmail(email3) {
   return rows[0] ?? null;
 }
 
-// ../../../../tmp/bundler/server/auth-router.ts
+// ../../../../tmp/bundler3/server/auth-router.ts
 var authRouter = createRouter({
   me: authedQuery.query((opts) => opts.ctx.user),
   loginLocal: publicQuery.input(external_exports.object({ email: external_exports.string().email(), password: external_exports.string().min(1) })).mutation(async ({ ctx, input }) => {
@@ -31437,13 +31437,16 @@ var authRouter = createRouter({
   })
 });
 
-// ../../../../tmp/bundler/server/content-router.ts
+// ../../../../tmp/bundler3/server/content-router.ts
 var TEMA_KEY = "tema";
 var DEFAULT_TEMA = {
   title: "In cammino verso la luce",
   tag: "Un anno per crescere insieme: fede vissuta, amicizia autentica, servizio concreto.",
   body: ""
 };
+var POSTER_KEY = "home_poster";
+var DEFAULT_POSTER = "assets/appuntamenti_ottobre.jpg";
+var MAX_POSTER_CHARS = 6e6;
 var eventInput = external_exports.object({
   date: external_exports.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data non valida"),
   time: external_exports.string().max(5).default(""),
@@ -31455,6 +31458,9 @@ var temaInput = external_exports.object({
   title: external_exports.string().min(1).max(255),
   tag: external_exports.string().max(500).default(""),
   body: external_exports.string().max(1e4).default("")
+});
+var posterInput = external_exports.object({
+  image: external_exports.string().max(MAX_POSTER_CHARS)
 });
 var contentRouter = createRouter({
   listEvents: publicQuery.query(async () => {
@@ -31506,10 +31512,32 @@ var contentRouter = createRouter({
       await db.insert(siteContent).values({ key: TEMA_KEY, value });
     }
     return { ok: true };
+  }),
+  getPoster: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTER_KEY));
+    if (!rows.length) return { image: DEFAULT_POSTER };
+    try {
+      const parsed = JSON.parse(rows[0].value);
+      return { image: typeof parsed.image === "string" ? parsed.image : DEFAULT_POSTER };
+    } catch {
+      return { image: DEFAULT_POSTER };
+    }
+  }),
+  savePoster: adminQuery.input(posterInput).mutation(async ({ input }) => {
+    const db = getDb();
+    const value = JSON.stringify({ image: input.image });
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTER_KEY));
+    if (rows.length) {
+      await db.update(siteContent).set({ value }).where(eq(siteContent.key, POSTER_KEY));
+    } else {
+      await db.insert(siteContent).values({ key: POSTER_KEY, value });
+    }
+    return { ok: true };
   })
 });
 
-// ../../../../tmp/bundler/server/router.ts
+// ../../../../tmp/bundler3/server/router.ts
 var appRouter = createRouter({
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
   auth: authRouter,
@@ -31520,10 +31548,10 @@ var appRouter = createRouter({
   // }),
 });
 
-// ../../../../tmp/bundler/server/auth.ts
+// ../../../../tmp/bundler3/server/auth.ts
 var cookie2 = __toESM(require_dist());
 
-// ../../../../tmp/bundler/contracts/errors.ts
+// ../../../../tmp/bundler3/contracts/errors.ts
 function appError(status, message2) {
   return { tag: "app_error", status, message: message2 };
 }
@@ -31535,7 +31563,7 @@ var Errors2 = {
   internal: (msg) => appError(500, msg)
 };
 
-// ../../../../tmp/bundler/server/auth.ts
+// ../../../../tmp/bundler3/server/auth.ts
 async function authenticateRequest(headers) {
   const cookies = cookie2.parse(headers.get("cookie") || "");
   const token = cookies[Session.cookieName];
@@ -31553,7 +31581,7 @@ async function authenticateRequest(headers) {
   return user;
 }
 
-// ../../../../tmp/bundler/server/context.ts
+// ../../../../tmp/bundler3/server/context.ts
 async function createContext(opts) {
   const ctx = { req: opts.req, resHeaders: opts.resHeaders };
   try {
@@ -31563,7 +31591,7 @@ async function createContext(opts) {
   return ctx;
 }
 
-// ../../../../tmp/bundler/server/boot.ts
+// ../../../../tmp/bundler3/server/boot.ts
 var app = new Hono2();
 app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 app.get("/api/health", async (c) => {
@@ -31579,7 +31607,7 @@ app.use("/api/trpc", async (c) => {
     endpoint: "/api/trpc",
     req: c.req.raw,
     router: appRouter,
-    createContext,
+    createContext
   });
 });
 app.use("/api/trpc/*", async (c) => {
