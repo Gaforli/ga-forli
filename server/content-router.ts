@@ -11,6 +11,13 @@ const DEFAULT_TEMA = {
   body: "",
 };
 
+// Locandina della home: può essere un percorso in assets/ oppure una data URL
+// (immagine caricata dal Direttore GA, compressa lato client e salvata nel DB).
+// Stringa vuota = locandina nascosta.
+const POSTER_KEY = "home_poster";
+const DEFAULT_POSTER = "assets/appuntamenti_ottobre.jpg";
+const MAX_POSTER_CHARS = 6_000_000; // ~4,5 MB di immagine in base64
+
 const eventInput = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data non valida"),
   time: z.string().max(5).default(""),
@@ -23,6 +30,10 @@ const temaInput = z.object({
   title: z.string().min(1).max(255),
   tag: z.string().max(500).default(""),
   body: z.string().max(10000).default(""),
+});
+
+const posterInput = z.object({
+  image: z.string().max(MAX_POSTER_CHARS),
 });
 
 export const contentRouter = createRouter({
@@ -79,6 +90,30 @@ export const contentRouter = createRouter({
       await db.update(siteContent).set({ value }).where(eq(siteContent.key, TEMA_KEY));
     } else {
       await db.insert(siteContent).values({ key: TEMA_KEY, value });
+    }
+    return { ok: true };
+  }),
+
+  getPoster: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTER_KEY));
+    if (!rows.length) return { image: DEFAULT_POSTER };
+    try {
+      const parsed = JSON.parse(rows[0].value) as { image?: unknown };
+      return { image: typeof parsed.image === "string" ? parsed.image : DEFAULT_POSTER };
+    } catch {
+      return { image: DEFAULT_POSTER };
+    }
+  }),
+
+  savePoster: adminQuery.input(posterInput).mutation(async ({ input }) => {
+    const db = getDb();
+    const value = JSON.stringify({ image: input.image });
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTER_KEY));
+    if (rows.length) {
+      await db.update(siteContent).set({ value }).where(eq(siteContent.key, POSTER_KEY));
+    } else {
+      await db.insert(siteContent).values({ key: POSTER_KEY, value });
     }
     return { ok: true };
   }),
