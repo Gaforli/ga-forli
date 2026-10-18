@@ -19,6 +19,8 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
   const upcoming = upcomingEvents(events).slice(0, 5);
   const verse = VERSES[dayOfYear() % VERSES.length];
   const [liked, setLiked] = useState(false);
+  const posterQuery = trpc.content.getPoster.useQuery();
+  const poster = posterQuery.data?.image;
 
   return (
     <>
@@ -36,9 +38,14 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
         </div>
       </div>
 
-      <div className="postercard">
-        <img src="assets/appuntamenti_ottobre.jpg" alt="Appuntamenti di ottobre: 3 ottobre merenda con meditazione tra donne, ore 16:00 parco della chiesa; 10 ottobre chiusura del sabato nel giardino della famiglia Menna, dalle 16:30 alle 20:30; 17 ottobre libero; 24 ottobre chiusura del sabato GA con meditazione, cena e film; 31 ottobre serata giochi anti-halloween GA e Compagnon" />
-      </div>
+      {posterQuery.isLoading && (
+        <div className="postercard" aria-hidden="true"><div className="sk" style={{ height: 300 }} /></div>
+      )}
+      {!posterQuery.isLoading && poster && (
+        <div className="postercard">
+          <img src={poster} alt="Locandina degli appuntamenti del mese del gruppo GA Forlì" />
+        </div>
+      )}
 
       <div className="sechead">
         <h3>{t("h_upcoming")}</h3>

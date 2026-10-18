@@ -1,9 +1,25 @@
 import { useState, useEffect } from "react";
+import type { ChangeEvent } from "react";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { CATS } from "@/i18n";
 import { fmtDate } from "@/lib/utils";
 import type { Lang, Page, EventCategory } from "@/types";
+
+// Comprime l'immagine scelta dal Direttore GA (max 1400px, JPEG) e la
+// converte in data URL, così può essere salvata nel database.
+async function fileToPosterDataUrl(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1400 / bitmap.width);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas non disponibile");
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL("image/jpeg", 0.82);
+}
 
 interface Props {
   t: (k: string) => string;
@@ -14,11 +30,37 @@ interface Props {
 export default function AdminPage({ t, lang, goPage }: Props) {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const isAdmin = isAuthenticated && user?.role === "admin";
-  const [tab, setTab] = useState<"ev" | "tema">("ev");
+  const [tab, setTab] = useState<"ev" | "tema" | "poster">("ev");
 
   const utils = trpc.useUtils();
   const eventsQuery = trpc.content.listEvents.useQuery(undefined, { enabled: isAdmin });
   const temaQuery = trpc.content.getTema.useQuery(undefined, { enabled: isAdmin });
+  const posterQuery = trpc.content.getPoster.useQuery(undefined, { enabled: isAdmin });
+
+  const [posterImg, setPosterImg] = useState<string | null>(null);
+  const [posterMsg, setPosterMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  const savePoster = trpc.content.savePoster.useMutation({
+    onSuccess: () => {
+      utils.content.getPoster.invalidate();
+      setPosterImg(null);
+      setPosterMsg({ text: t("adm_pdone"), ok: true });
+      setTimeout(() => setPosterMsg(null), 3000);
+    },
+    onError: () => setPosterMsg({ text: t("adm_perr"), ok: false }),
+  });
+
+  const pickPoster = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      setPosterImg(await fileToPosterDataUrl(file));
+      setPosterMsg(null);
+    } catch {
+      setPosterMsg({ text: t("adm_perr"), ok: false });
+    }
+  };
 
   const [leEmail, setLeEmail] = useState("");
   const [lePassword, setLePassword] = useState("");
@@ -181,6 +223,7 @@ export default function AdminPage({ t, lang, goPage }: Props) {
       <div className="admintabs">
         <button className={tab === "ev" ? "on" : ""} onClick={() => setTab("ev")}>{t("adm_events")}</button>
         <button className={tab === "tema" ? "on" : ""} onClick={() => setTab("tema")}>{t("adm_theme")}</button>
+        <button className={tab === "poster" ? "on" : ""} onClick={() => setTab("poster")}>{t("adm_poster")}</button>
       </div>
 
       {tab === "ev" && (
@@ -240,6 +283,40 @@ export default function AdminPage({ t, lang, goPage }: Props) {
             {t("adm_savet")}
           </button>
           {temaMsg && <span className="savedmsg">{temaMsg}</span>}
+        </div>
+      )}
+
+      {tab === "poster" && (
+        <div className="formcard">
+          <h4>{t("adm_poster")}</h4>
+          <p className="sub" style={{ marginBottom: 14 }}>{t("adm_poster_d")}</p>
+          <span className="flabel">{t("adm_poster_cur")}</span>
+          {posterQuery.data?.image ? (
+            <div className="postercard" style={{ margin: "6px 0 18px" }}>
+              <img src={posterQuery.data.image} alt={t("adm_poster_cur")} />
+            </div>
+          ) : (
+            <p className="noevents" style={{ textAlign: "left", padding: "4px 0 14px" }}>{t("adm_poster_none")}</p>
+          )}
+          <label className="flabel" htmlFor="posterFile">{t("adm_poster_new")}</label>
+          <input className="finput" id="posterFile" type="file" accept="image/*" onChange={pickPoster} />
+          {posterImg && (
+            <>
+              <span className="flabel" style={{ marginTop: 14 }}>{t("adm_poster_prev")}</span>
+              <div className="postercard" style={{ margin: "6px 0 14px" }}>
+                <img src={posterImg} alt={t("adm_poster_prev")} />
+              </div>
+              <button className="savebtn" onClick={() => savePoster.mutate({ image: posterImg })} disabled={savePoster.isPending}>
+                {t("adm_poster_save")}
+              </button>
+            </>
+          )}
+          {!posterImg && posterQuery.data?.image && (
+            <button className="logoutbtn" onClick={() => savePoster.mutate({ image: "" })} disabled={savePoster.isPending}>
+              {t("adm_poster_del")}
+            </button>
+          )}
+          {posterMsg && <span className="savedmsg" style={posterMsg.ok ? {} : { color: "var(--color-danger)" }}>{posterMsg.text}</span>}
         </div>
       )}
     </div>
