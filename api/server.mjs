@@ -31574,6 +31574,14 @@ app.get("/api/health", async (c) => {
     return c.json({ ok: false, error: String(e) }, 500);
   }
 });
+app.use("/api/trpc", async (c) => {
+  return fetchRequestHandler({
+    endpoint: "/api/trpc",
+    req: c.req.raw,
+    router: appRouter,
+    createContext,
+  });
+});
 app.use("/api/trpc/*", async (c) => {
   return fetchRequestHandler({
     endpoint: "/api/trpc",
