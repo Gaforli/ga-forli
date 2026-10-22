@@ -15,4 +15,10 @@ export const env = {
   // Supabase Postgres connection string (transaction pooler, porta 6543)
   databaseUrl: required("DATABASE_URL"),
   ownerUnionId: process.env.OWNER_UNION_ID ?? "",
+  // Supabase Auth (per il login Google/Facebook/email nella pagina Preghiere)
+  supabaseUrl: process.env.SUPABASE_URL ?? "",
+  supabaseAnonKey: process.env.SUPABASE_ANON_KEY ?? "",
+  // Resend (email di notifica al Direttore GA per le nuove richieste)
+  resendApiKey: process.env.RESEND_API_KEY ?? "",
+  prayerNotifyEmail: process.env.PRAYER_NOTIFY_EMAIL ?? "luigifrancescasposi@gmail.com",
 };

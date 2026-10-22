@@ -2,6 +2,7 @@ import {
   pgTable,
   pgEnum,
   serial,
+  integer,
   varchar,
   text,
   timestamp,
@@ -41,7 +42,7 @@ export const events = pgTable("events", {
   title: varchar("title", { length: 255 }).notNull(),
   cat: eventCatEnum("cat").notNull(),
   desc: text("desc"),
-  image: varchar("image", { length: 255 }).default(""),
+  image: text("image").default(""),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
 });
 
@@ -69,3 +70,15 @@ export const adminAccounts = pgTable("admin_accounts", {
 });
 
 export type AdminAccount = typeof adminAccounts.$inferSelect;
+
+export const prayerRequests = pgTable("prayer_requests", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body").notNull().default(""),
+  status: varchar("status", { length: 16 }).notNull().default("pending"),
+  prayed: integer("prayed").notNull().default(0),
+  authorName: varchar("author_name", { length: 255 }).default(""),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+});
+
+export type PrayerRequest = typeof prayerRequests.$inferSelect;

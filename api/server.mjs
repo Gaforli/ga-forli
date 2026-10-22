@@ -1534,7 +1534,7 @@ var init_serve_static = __esm({
   }
 });
 
-// ../../../../tmp/bundler3/server/lib/vite.ts
+// ../../../../tmp/bundler6/server/lib/vite.ts
 var vite_exports = {};
 __export(vite_exports, {
   serveStaticFiles: () => serveStaticFiles
@@ -1555,7 +1555,7 @@ function serveStaticFiles(app2) {
   });
 }
 var init_vite = __esm({
-  "../../../../tmp/bundler3/server/lib/vite.ts"() {
+  "../../../../tmp/bundler6/server/lib/vite.ts"() {
     init_serve_static();
   }
 });
@@ -9246,7 +9246,7 @@ function mapRelationalRow(tablesConfig, tableConfig, row, buildQueryResultSelect
   return result;
 }
 
-// ../../../../tmp/bundler3/server/auth-router.ts
+// ../../../../tmp/bundler6/server/auth-router.ts
 var cookie = __toESM(require_dist());
 
 // node_modules/zod/v4/classic/external.js
@@ -23017,7 +23017,7 @@ function date5(params) {
 // node_modules/zod/v4/classic/external.js
 config(en_default());
 
-// ../../../../tmp/bundler3/contracts/constants.ts
+// ../../../../tmp/bundler6/contracts/constants.ts
 var Session = {
   cookieName: "kimi_sid",
   maxAgeMs: 365 * 24 * 60 * 60 * 1e3
@@ -23027,7 +23027,7 @@ var ErrorMessages = {
   insufficientRole: "Insufficient permissions"
 };
 
-// ../../../../tmp/bundler3/server/lib/cookies.ts
+// ../../../../tmp/bundler6/server/lib/cookies.ts
 function isLocalhost(headers) {
   const host = headers.get("host") || "";
   return host.startsWith("localhost:") || host.startsWith("127.0.0.1:");
@@ -24189,7 +24189,7 @@ var registerCustom = SuperJSON.registerCustom;
 var registerSymbol = SuperJSON.registerSymbol;
 var allowErrorProps = SuperJSON.allowErrorProps;
 
-// ../../../../tmp/bundler3/server/middleware.ts
+// ../../../../tmp/bundler6/server/middleware.ts
 var t = initTRPC.context().create({
   transformer: dist_default
 });
@@ -25571,7 +25571,7 @@ var SignJWT = class {
   );
 })();
 
-// ../../../../tmp/bundler3/server/lib/env.ts
+// ../../../../tmp/bundler6/server/lib/env.ts
 function required2(name) {
   const value = process.env[name];
   if (!value && process.env.NODE_ENV === "production") {
@@ -25585,10 +25585,16 @@ var env = {
   isProduction: process.env.NODE_ENV === "production",
   // Supabase Postgres connection string (transaction pooler, porta 6543)
   databaseUrl: required2("DATABASE_URL"),
-  ownerUnionId: process.env.OWNER_UNION_ID ?? ""
+  ownerUnionId: process.env.OWNER_UNION_ID ?? "",
+  // Supabase Auth (per il login Google/Facebook/email nella pagina Preghiere)
+  supabaseUrl: process.env.SUPABASE_URL ?? "",
+  supabaseAnonKey: process.env.SUPABASE_ANON_KEY ?? "",
+  // Resend (email di notifica al Direttore GA per le nuove richieste)
+  resendApiKey: process.env.RESEND_API_KEY ?? "",
+  prayerNotifyEmail: process.env.PRAYER_NOTIFY_EMAIL ?? "luigifrancescasposi@gmail.com"
 };
 
-// ../../../../tmp/bundler3/server/session.ts
+// ../../../../tmp/bundler6/server/session.ts
 var JWT_ALG = "HS256";
 async function signSessionToken(payload) {
   const secret = new TextEncoder().encode(env.appSecret);
@@ -25609,12 +25615,13 @@ async function verifySessionToken(token) {
   }
 }
 
-// ../../../../tmp/bundler3/db/schema.ts
+// ../../../../tmp/bundler6/db/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
   adminAccounts: () => adminAccounts,
   eventCatEnum: () => eventCatEnum,
   events: () => events,
+  prayerRequests: () => prayerRequests,
   roleEnum: () => roleEnum,
   siteContent: () => siteContent,
   users: () => users
@@ -28990,7 +28997,7 @@ var PgTransaction = class extends PgDatabase {
   }
 };
 
-// ../../../../tmp/bundler3/db/schema.ts
+// ../../../../tmp/bundler6/db/schema.ts
 var roleEnum = pgEnum("role", ["user", "admin"]);
 var eventCatEnum = pgEnum("event_cat", [
   "spiritualita",
@@ -29017,7 +29024,7 @@ var events = pgTable("events", {
   title: varchar("title", { length: 255 }).notNull(),
   cat: eventCatEnum("cat").notNull(),
   desc: text("desc"),
-  image: varchar("image", { length: 255 }).default(""),
+  image: text("image").default(""),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull()
 });
 var siteContent = pgTable("site_content", {
@@ -29031,6 +29038,15 @@ var adminAccounts = pgTable("admin_accounts", {
   email: varchar("email", { length: 320 }).notNull().unique(),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
   name: varchar("name", { length: 255 }),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull()
+});
+var prayerRequests = pgTable("prayer_requests", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body").notNull().default(""),
+  status: varchar("status", { length: 16 }).notNull().default("pending"),
+  prayed: integer("prayed").notNull().default(0),
+  authorName: varchar("author_name", { length: 255 }).default(""),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull()
 });
 
@@ -31334,10 +31350,10 @@ function drizzle(...params) {
   drizzle2.mock = mock;
 })(drizzle || (drizzle = {}));
 
-// ../../../../tmp/bundler3/db/relations.ts
+// ../../../../tmp/bundler6/db/relations.ts
 var relations_exports = {};
 
-// ../../../../tmp/bundler3/server/queries/connection.ts
+// ../../../../tmp/bundler6/server/queries/connection.ts
 var fullSchema = { ...schema_exports, ...relations_exports };
 var instance;
 function getDb() {
@@ -31348,7 +31364,7 @@ function getDb() {
   return instance;
 }
 
-// ../../../../tmp/bundler3/server/queries/users.ts
+// ../../../../tmp/bundler6/server/queries/users.ts
 async function findUserByUnionId(unionId) {
   const rows = await getDb().select().from(users).where(eq(users.unionId, unionId)).limit(1);
   return rows.at(0);
@@ -31366,7 +31382,7 @@ async function upsertUser(data) {
   await getDb().insert(users).values(values2).onConflictDoUpdate({ target: users.unionId, set: updateSet });
 }
 
-// ../../../../tmp/bundler3/server/local-auth.ts
+// ../../../../tmp/bundler6/server/local-auth.ts
 import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
 function scryptAsync(password, salt) {
   return new Promise((resolve, reject) => {
@@ -31392,7 +31408,7 @@ async function findAdminByEmail(email3) {
   return rows[0] ?? null;
 }
 
-// ../../../../tmp/bundler3/server/auth-router.ts
+// ../../../../tmp/bundler6/server/auth-router.ts
 var authRouter = createRouter({
   me: authedQuery.query((opts) => opts.ctx.user),
   loginLocal: publicQuery.input(external_exports.object({ email: external_exports.string().email(), password: external_exports.string().min(1) })).mutation(async ({ ctx, input }) => {
@@ -31437,31 +31453,73 @@ var authRouter = createRouter({
   })
 });
 
-// ../../../../tmp/bundler3/server/content-router.ts
+// ../../../../tmp/bundler6/server/content-router.ts
 var TEMA_KEY = "tema";
 var DEFAULT_TEMA = {
   title: "In cammino verso la luce",
   tag: "Un anno per crescere insieme: fede vissuta, amicizia autentica, servizio concreto.",
   body: ""
 };
-var POSTER_KEY = "home_poster";
-var DEFAULT_POSTER = "assets/appuntamenti_ottobre.jpg";
+var POSTERS_KEY = "home_posters";
+var DEFAULT_POSTERS = ["assets/appuntamenti_ottobre.jpg"];
+var MONTHLY_KEY = "monthly_poster";
 var MAX_POSTER_CHARS = 6e6;
 var eventInput = external_exports.object({
   date: external_exports.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data non valida"),
   time: external_exports.string().max(5).default(""),
   title: external_exports.string().min(1, "Titolo obbligatorio").max(255),
   cat: external_exports.enum(["spiritualita", "natura", "musica", "comunita", "formazione"]),
-  desc: external_exports.string().max(2e3).default("")
+  desc: external_exports.string().max(2e3).default(""),
+  image: external_exports.string().max(MAX_POSTER_CHARS).default("")
 });
 var temaInput = external_exports.object({
   title: external_exports.string().min(1).max(255),
   tag: external_exports.string().max(500).default(""),
   body: external_exports.string().max(1e4).default("")
 });
-var posterInput = external_exports.object({
+var postersInput = external_exports.object({
+  images: external_exports.array(external_exports.string().max(MAX_POSTER_CHARS)).max(10)
+});
+var monthlyInput = external_exports.object({
   image: external_exports.string().max(MAX_POSTER_CHARS)
 });
+var prayerInput = external_exports.object({
+  title: external_exports.string().min(1, "Titolo obbligatorio").max(120),
+  body: external_exports.string().min(1, "Scrivi la richiesta").max(1e3),
+  token: external_exports.string().min(10)
+  // access token Supabase Auth dell'utente loggato
+});
+async function verifySupabaseUser(token) {
+  if (!env.supabaseUrl || !env.supabaseAnonKey) throw new Error("Supabase Auth non configurato");
+  const res = await fetch(`${env.supabaseUrl}/auth/v1/user`, {
+    headers: { Authorization: `Bearer ${token}`, apikey: env.supabaseAnonKey }
+  });
+  if (!res.ok) throw new Error("Accesso non valido");
+  const u = await res.json();
+  return u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split("@")[0] || "Anonimo";
+}
+async function notifyNewPrayer(title, body, author) {
+  if (!env.resendApiKey) return;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.resendApiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "GA Forl\xEC <onboarding@resend.dev>",
+        to: [env.prayerNotifyEmail],
+        subject: `Nuova richiesta di preghiera: ${title}`,
+        text: `${author} ha inviato una nuova richiesta di preghiera.
+
+Titolo: ${title}
+
+${body}
+
+Per approvarla o eliminarla apri il sito gaforli.vercel.app \u2192 menu \u2192 Direttore GA \u2192 scheda Preghiere.`
+      })
+    });
+  } catch {
+  }
+}
 var contentRouter = createRouter({
   listEvents: publicQuery.query(async () => {
     const db = getDb();
@@ -31483,7 +31541,8 @@ var contentRouter = createRouter({
       time: input.time,
       title: input.title,
       cat: input.cat,
-      desc: input.desc
+      desc: input.desc,
+      image: input.image
     });
     return { ok: true };
   }),
@@ -31513,31 +31572,98 @@ var contentRouter = createRouter({
     }
     return { ok: true };
   }),
-  getPoster: publicQuery.query(async () => {
+  getPosters: publicQuery.query(async () => {
     const db = getDb();
-    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTER_KEY));
-    if (!rows.length) return { image: DEFAULT_POSTER };
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTERS_KEY));
+    if (!rows.length) return { images: DEFAULT_POSTERS };
     try {
       const parsed = JSON.parse(rows[0].value);
-      return { image: typeof parsed.image === "string" ? parsed.image : DEFAULT_POSTER };
+      const images = Array.isArray(parsed.images) ? parsed.images.filter((i) => typeof i === "string") : DEFAULT_POSTERS;
+      return { images };
     } catch {
-      return { image: DEFAULT_POSTER };
+      return { images: DEFAULT_POSTERS };
     }
   }),
-  savePoster: adminQuery.input(posterInput).mutation(async ({ input }) => {
+  savePosters: adminQuery.input(postersInput).mutation(async ({ input }) => {
+    const db = getDb();
+    const value = JSON.stringify({ images: input.images });
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTERS_KEY));
+    if (rows.length) {
+      await db.update(siteContent).set({ value }).where(eq(siteContent.key, POSTERS_KEY));
+    } else {
+      await db.insert(siteContent).values({ key: POSTERS_KEY, value });
+    }
+    return { ok: true };
+  }),
+  getMonthly: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, MONTHLY_KEY));
+    if (!rows.length) return { image: "" };
+    try {
+      const parsed = JSON.parse(rows[0].value);
+      return { image: typeof parsed.image === "string" ? parsed.image : "" };
+    } catch {
+      return { image: "" };
+    }
+  }),
+  saveMonthly: adminQuery.input(monthlyInput).mutation(async ({ input }) => {
     const db = getDb();
     const value = JSON.stringify({ image: input.image });
-    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTER_KEY));
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, MONTHLY_KEY));
     if (rows.length) {
-      await db.update(siteContent).set({ value }).where(eq(siteContent.key, POSTER_KEY));
+      await db.update(siteContent).set({ value }).where(eq(siteContent.key, MONTHLY_KEY));
     } else {
-      await db.insert(siteContent).values({ key: POSTER_KEY, value });
+      await db.insert(siteContent).values({ key: MONTHLY_KEY, value });
     }
+    return { ok: true };
+  }),
+  // ── Preghiere: bacheca pubblica ──
+  listPrayers: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(prayerRequests).where(eq(prayerRequests.status, "approved")).orderBy(desc(prayerRequests.createdAt));
+    return rows.map((r) => ({
+      id: Number(r.id),
+      title: r.title,
+      body: r.body ?? "",
+      prayed: r.prayed
+    }));
+  }),
+  prayFor: publicQuery.input(external_exports.object({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
+    const db = getDb();
+    await db.update(prayerRequests).set({ prayed: sql`${prayerRequests.prayed} + 1` }).where(eq(prayerRequests.id, input.id));
+    return { ok: true };
+  }),
+  // Invio richiesta: richiede il login (Google/Facebook/email via Supabase Auth).
+  submitPrayer: publicQuery.input(prayerInput).mutation(async ({ input }) => {
+    const author = await verifySupabaseUser(input.token);
+    const db = getDb();
+    await db.insert(prayerRequests).values({
+      title: input.title.trim(),
+      body: input.body.trim(),
+      authorName: author
+    });
+    await notifyNewPrayer(input.title.trim(), input.body.trim(), author);
+    return { ok: true };
+  }),
+  // Moderazione (solo Direttore GA)
+  listPendingPrayers: adminQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(prayerRequests).where(eq(prayerRequests.status, "pending")).orderBy(desc(prayerRequests.createdAt));
+    return rows.map((r) => ({ id: Number(r.id), title: r.title, body: r.body ?? "", author: r.authorName ?? "" }));
+  }),
+  approvePrayer: adminQuery.input(external_exports.object({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
+    const db = getDb();
+    await db.update(prayerRequests).set({ status: "approved" }).where(eq(prayerRequests.id, input.id));
+    return { ok: true };
+  }),
+  deletePrayer: adminQuery.input(external_exports.object({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
+    const db = getDb();
+    await db.delete(prayerRequests).where(eq(prayerRequests.id, input.id));
     return { ok: true };
   })
 });
 
-// ../../../../tmp/bundler3/server/router.ts
+// ../../../../tmp/bundler6/server/router.ts
 var appRouter = createRouter({
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
   auth: authRouter,
@@ -31548,10 +31674,10 @@ var appRouter = createRouter({
   // }),
 });
 
-// ../../../../tmp/bundler3/server/auth.ts
+// ../../../../tmp/bundler6/server/auth.ts
 var cookie2 = __toESM(require_dist());
 
-// ../../../../tmp/bundler3/contracts/errors.ts
+// ../../../../tmp/bundler6/contracts/errors.ts
 function appError(status, message2) {
   return { tag: "app_error", status, message: message2 };
 }
@@ -31563,7 +31689,7 @@ var Errors2 = {
   internal: (msg) => appError(500, msg)
 };
 
-// ../../../../tmp/bundler3/server/auth.ts
+// ../../../../tmp/bundler6/server/auth.ts
 async function authenticateRequest(headers) {
   const cookies = cookie2.parse(headers.get("cookie") || "");
   const token = cookies[Session.cookieName];
@@ -31581,7 +31707,7 @@ async function authenticateRequest(headers) {
   return user;
 }
 
-// ../../../../tmp/bundler3/server/context.ts
+// ../../../../tmp/bundler6/server/context.ts
 async function createContext(opts) {
   const ctx = { req: opts.req, resHeaders: opts.resHeaders };
   try {
@@ -31591,7 +31717,7 @@ async function createContext(opts) {
   return ctx;
 }
 
-// ../../../../tmp/bundler3/server/boot.ts
+// ../../../../tmp/bundler6/server/boot.ts
 var app = new Hono2();
 app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 app.get("/api/health", async (c) => {

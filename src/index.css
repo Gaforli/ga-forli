@@ -384,9 +384,52 @@ svg { display: block; }
 .adminev .del:hover { border-color: var(--color-danger); color: var(--color-danger); }
 .adminev .del:active { transform: scale(.94); }
 
+/* Carosello locandine home */
+.posterscroll { display: flex; gap: var(--space-3); overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding: 0 var(--space-4) var(--space-2); margin-top: var(--space-4); }
+.posterscroll .postercard { flex: 0 0 auto; scroll-snap-align: center; margin: 0; width: min(85vw, 380px); }
+.posterscroll .postercard img { width: 100%; height: auto; }
+
+/* Gestione locandine admin */
+.admposter { display: flex; align-items: center; gap: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: var(--space-2); }
+.admposter-actions { display: flex; align-items: center; gap: var(--space-2); flex: 1; }
+.admposter-num { font-weight: 800; font-size: .9rem; color: var(--color-text-muted); min-width: 24px; text-align: center; }
+
 #toTop { position: fixed; right: 20px; bottom: calc(var(--tabbar-h) + 14px); width: 48px; height: 48px; border-radius: 50%; background: var(--color-primary); color: #fff; border: none; font-size: 1.2rem; cursor: pointer; z-index: 50; box-shadow: var(--shadow-md); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 #toTop:hover { background: var(--color-primary-dark); }
 #toTop:active { transform: scale(.94); }
+
+/* ==================== PREGHIERE — BACHECA ==================== */
+.prayhead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.prayhead .ptitle { margin-bottom: 0; }
+.monthpill { flex-shrink: 0; margin-top: 6px; background: var(--color-warning-soft); color: var(--color-text-strong); font-weight: 800; font-size: .75rem; letter-spacing: .06em; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--color-border); }
+
+.board { margin-top: var(--space-4); background: url("/assets/cork.png") repeat; background-size: 220px; border: 12px solid #E8D9BF; border-radius: var(--radius-xl); box-shadow: var(--shadow-md), inset 0 2px 10px rgba(90, 60, 30, .35); padding: var(--space-5) var(--space-4); display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); align-items: start; }
+.board-empty { display: block; text-align: center; padding: var(--space-6) var(--space-4); }
+
+.postit { position: relative; border: none; cursor: pointer; text-align: left; border-radius: 3px; padding: 22px 14px 14px; min-height: 150px; display: flex; flex-direction: column; gap: 6px; transform: rotate(var(--tilt, 0deg)); box-shadow: 0 6px 12px rgba(60, 40, 20, .35); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+.postit:hover { transform: rotate(0deg) scale(1.03); box-shadow: 0 10px 18px rgba(60, 40, 20, .4); }
+.postit:active { transform: scale(.98); }
+.postit .pin { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 3px 4px rgba(60, 40, 20, .45), inset -2px -2px 3px rgba(0, 0, 0, .25), inset 2px 2px 3px rgba(255, 255, 255, .35); }
+.postit .ptitle2 { font-family: var(--font-hand); font-weight: 600; font-size: 1.55rem; line-height: 1.05; color: var(--color-text-strong); }
+.postit .pbody { font-family: var(--font-hand); font-size: 1.2rem; line-height: 1.25; color: var(--color-text); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.postit .pread { margin-top: auto; font-size: .78rem; font-weight: 700; color: var(--color-primary); opacity: .85; }
+
+.praywrite { width: 100%; margin-top: var(--space-5); min-height: 52px; font-size: 1rem; }
+
+.sheetwrap { position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end; justify-content: center; }
+.praysheet { position: relative; z-index: 71; width: 100%; max-width: 520px; background: var(--color-surface); border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: var(--space-6) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom)); box-shadow: 0 -8px 30px rgba(27, 45, 64, .25); max-height: 85vh; overflow-y: auto; }
+.praysheet .dclose { position: absolute; top: 14px; right: 14px; }
+.praysheet h3 { font-size: 1.35rem; font-weight: 800; color: var(--color-text-strong); margin: 10px 0 8px; }
+.praysheet .q { font-family: var(--font-hand); font-size: 1.5rem; line-height: 1.35; color: var(--color-text); margin-bottom: var(--space-4); }
+.praysheet .chip { display: inline-block; background: var(--color-secondary-soft); color: var(--color-text-strong); font-weight: 800; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; padding: 5px 11px; border-radius: 999px; }
+.prayjoin { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.prayjoin.joined { background: var(--color-secondary); }
+
+@media (min-width: 560px) {
+  .board { grid-template-columns: repeat(3, 1fr); }
+  .sheetwrap { align-items: center; }
+  .praysheet { border-radius: var(--radius-xl); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

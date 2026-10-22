@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { events, siteContent } from "../db/schema";
+import { events, siteContent, prayerRequests } from "../db/schema";
+import { env } from "./lib/env";
 
 const TEMA_KEY = "tema";
 const DEFAULT_TEMA = {
@@ -11,11 +12,14 @@ const DEFAULT_TEMA = {
   body: "",
 };
 
-// Locandina della home: può essere un percorso in assets/ oppure una data URL
-// (immagine caricata dal Direttore GA, compressa lato client e salvata nel DB).
-// Stringa vuota = locandina nascosta.
-const POSTER_KEY = "home_poster";
-const DEFAULT_POSTER = "assets/appuntamenti_ottobre.jpg";
+// Locandine della home: array ordinato di immagini (data URL o percorso assets/).
+// Il Direttore GA le carica e le riordina dall'area riservata.
+// Array vuoto = sezione nascosta.
+const POSTERS_KEY = "home_posters";
+const DEFAULT_POSTERS = ["assets/appuntamenti_ottobre.jpg"];
+
+// Locandina "Attività del mese": singola immagine mostrata nella pagina dedicata.
+const MONTHLY_KEY = "monthly_poster";
 const MAX_POSTER_CHARS = 6_000_000; // ~4,5 MB di immagine in base64
 
 const eventInput = z.object({
@@ -24,6 +28,7 @@ const eventInput = z.object({
   title: z.string().min(1, "Titolo obbligatorio").max(255),
   cat: z.enum(["spiritualita", "natura", "musica", "comunita", "formazione"]),
   desc: z.string().max(2000).default(""),
+  image: z.string().max(MAX_POSTER_CHARS).default(""),
 });
 
 const temaInput = z.object({
@@ -32,9 +37,50 @@ const temaInput = z.object({
   body: z.string().max(10000).default(""),
 });
 
-const posterInput = z.object({
+const postersInput = z.object({
+  images: z.array(z.string().max(MAX_POSTER_CHARS)).max(10),
+});
+
+const monthlyInput = z.object({
   image: z.string().max(MAX_POSTER_CHARS),
 });
+
+// ── Richieste di preghiera ──
+const prayerInput = z.object({
+  title: z.string().min(1, "Titolo obbligatorio").max(120),
+  body: z.string().min(1, "Scrivi la richiesta").max(1000),
+  token: z.string().min(10), // access token Supabase Auth dell'utente loggato
+});
+
+// Verifica il token Supabase Auth chiamando l'API ufficiale e restituisce il nome utente.
+async function verifySupabaseUser(token: string): Promise<string> {
+  if (!env.supabaseUrl || !env.supabaseAnonKey) throw new Error("Supabase Auth non configurato");
+  const res = await fetch(`${env.supabaseUrl}/auth/v1/user`, {
+    headers: { Authorization: `Bearer ${token}`, apikey: env.supabaseAnonKey },
+  });
+  if (!res.ok) throw new Error("Accesso non valido");
+  const u = (await res.json()) as { email?: string; user_metadata?: { full_name?: string; name?: string } };
+  return u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split("@")[0] || "Anonimo";
+}
+
+// Invia la mail di notifica al Direttore GA tramite Resend (best-effort).
+async function notifyNewPrayer(title: string, body: string, author: string) {
+  if (!env.resendApiKey) return;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.resendApiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "GA Forlì <onboarding@resend.dev>",
+        to: [env.prayerNotifyEmail],
+        subject: `Nuova richiesta di preghiera: ${title}`,
+        text: `${author} ha inviato una nuova richiesta di preghiera.\n\nTitolo: ${title}\n\n${body}\n\nPer approvarla o eliminarla apri il sito gaforli.vercel.app → menu → Direttore GA → scheda Preghiere.`,
+      }),
+    });
+  } catch {
+    // la richiesta resta salvata anche se la mail fallisce
+  }
+}
 
 export const contentRouter = createRouter({
   listEvents: publicQuery.query(async () => {
@@ -59,6 +105,7 @@ export const contentRouter = createRouter({
       title: input.title,
       cat: input.cat,
       desc: input.desc,
+      image: input.image,
     });
     return { ok: true };
   }),
@@ -94,27 +141,114 @@ export const contentRouter = createRouter({
     return { ok: true };
   }),
 
-  getPoster: publicQuery.query(async () => {
+  getPosters: publicQuery.query(async () => {
     const db = getDb();
-    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTER_KEY));
-    if (!rows.length) return { image: DEFAULT_POSTER };
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTERS_KEY));
+    if (!rows.length) return { images: DEFAULT_POSTERS };
     try {
-      const parsed = JSON.parse(rows[0].value) as { image?: unknown };
-      return { image: typeof parsed.image === "string" ? parsed.image : DEFAULT_POSTER };
+      const parsed = JSON.parse(rows[0].value) as { images?: unknown };
+      const images = Array.isArray(parsed.images) ? parsed.images.filter((i): i is string => typeof i === "string") : DEFAULT_POSTERS;
+      return { images };
     } catch {
-      return { image: DEFAULT_POSTER };
+      return { images: DEFAULT_POSTERS };
     }
   }),
 
-  savePoster: adminQuery.input(posterInput).mutation(async ({ input }) => {
+  savePosters: adminQuery.input(postersInput).mutation(async ({ input }) => {
     const db = getDb();
-    const value = JSON.stringify({ image: input.image });
-    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTER_KEY));
+    const value = JSON.stringify({ images: input.images });
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, POSTERS_KEY));
     if (rows.length) {
-      await db.update(siteContent).set({ value }).where(eq(siteContent.key, POSTER_KEY));
+      await db.update(siteContent).set({ value }).where(eq(siteContent.key, POSTERS_KEY));
     } else {
-      await db.insert(siteContent).values({ key: POSTER_KEY, value });
+      await db.insert(siteContent).values({ key: POSTERS_KEY, value });
     }
     return { ok: true };
   }),
+
+  getMonthly: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, MONTHLY_KEY));
+    if (!rows.length) return { image: "" };
+    try {
+      const parsed = JSON.parse(rows[0].value) as { image?: unknown };
+      return { image: typeof parsed.image === "string" ? parsed.image : "" };
+    } catch {
+      return { image: "" };
+    }
+  }),
+
+  saveMonthly: adminQuery.input(monthlyInput).mutation(async ({ input }) => {
+    const db = getDb();
+    const value = JSON.stringify({ image: input.image });
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, MONTHLY_KEY));
+    if (rows.length) {
+      await db.update(siteContent).set({ value }).where(eq(siteContent.key, MONTHLY_KEY));
+    } else {
+      await db.insert(siteContent).values({ key: MONTHLY_KEY, value });
+    }
+    return { ok: true };
+  }),
+
+  // ── Preghiere: bacheca pubblica ──
+  listPrayers: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(prayerRequests)
+      .where(eq(prayerRequests.status, "approved"))
+      .orderBy(desc(prayerRequests.createdAt));
+    return rows.map((r) => ({
+      id: Number(r.id),
+      title: r.title,
+      body: r.body ?? "",
+      prayed: r.prayed,
+    }));
+  }),
+
+  prayFor: publicQuery
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      await db.update(prayerRequests)
+        .set({ prayed: sql`${prayerRequests.prayed} + 1` })
+        .where(eq(prayerRequests.id, input.id));
+      return { ok: true };
+    }),
+
+  // Invio richiesta: richiede il login (Google/Facebook/email via Supabase Auth).
+  submitPrayer: publicQuery.input(prayerInput).mutation(async ({ input }) => {
+    const author = await verifySupabaseUser(input.token);
+    const db = getDb();
+    await db.insert(prayerRequests).values({
+      title: input.title.trim(),
+      body: input.body.trim(),
+      authorName: author,
+    });
+    await notifyNewPrayer(input.title.trim(), input.body.trim(), author);
+    return { ok: true };
+  }),
+
+  // Moderazione (solo Direttore GA)
+  listPendingPrayers: adminQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(prayerRequests)
+      .where(eq(prayerRequests.status, "pending"))
+      .orderBy(desc(prayerRequests.createdAt));
+    return rows.map((r) => ({ id: Number(r.id), title: r.title, body: r.body ?? "", author: r.authorName ?? "" }));
+  }),
+
+  approvePrayer: adminQuery
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      await db.update(prayerRequests).set({ status: "approved" }).where(eq(prayerRequests.id, input.id));
+      return { ok: true };
+    }),
+
+  deletePrayer: adminQuery
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      await db.delete(prayerRequests).where(eq(prayerRequests.id, input.id));
+      return { ok: true };
+    }),
 });
