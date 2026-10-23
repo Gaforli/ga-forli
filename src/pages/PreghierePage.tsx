@@ -58,8 +58,17 @@ export default function PreghierePage({ t, lang }: Props) {
   const [authMode, setAuthMode] = useState<"choice" | "email">("choice");
   const [authEmail, setAuthEmail] = useState("");
   const [authPass, setAuthPass] = useState("");
-  const [authErr, setAuthErr] = useState(false);
+  const [authErr, setAuthErr] = useState<string | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
+
+  const mapAuthError = (msg: string): string => {
+    const m = msg.toLowerCase();
+    if (m.includes("already registered") || m.includes("already_exists")) return "pray_err_exists";
+    if (m.includes("invalid login") || m.includes("invalid_credentials")) return "pray_err_credentials";
+    if (m.includes("not confirmed")) return "pray_err_confirm";
+    if (m.includes("password")) return "pray_err_password";
+    return "pray_autherr";
+  };
 
   useEffect(() => {
     if (!supabase) return;
@@ -85,13 +94,14 @@ export default function PreghierePage({ t, lang }: Props) {
   };
 
   const emailAuth = async (mode: "login" | "signup") => {
-    if (!supabase || !authEmail.trim() || !authPass) { setAuthErr(true); return; }
+    if (!supabase || !authEmail.trim() || !authPass) { setAuthErr("pray_fill"); return; }
     setAuthBusy(true);
-    setAuthErr(false);
+    setAuthErr(null);
     const fn = mode === "login" ? supabase.auth.signInWithPassword : supabase.auth.signUp;
-    const { error } = await fn({ email: authEmail.trim(), password: authPass });
+    const { data, error } = await fn({ email: authEmail.trim(), password: authPass });
     setAuthBusy(false);
-    if (error) setAuthErr(true);
+    if (error) setAuthErr(mapAuthError(error.message));
+    else if (!data.session) setAuthErr("pray_err_confirm");
   };
 
   // ── Form richiesta ──
@@ -214,12 +224,12 @@ export default function PreghierePage({ t, lang }: Props) {
                     <input className="finput" id="prEmail" type="email" autoComplete="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} />
                     <label className="flabel" htmlFor="prPass">{t("adm_password")}</label>
                     <input className="finput" id="prPass" type="password" autoComplete="current-password" value={authPass} onChange={(e) => setAuthPass(e.target.value)} />
-                    {authErr && <p className="err">{t("pray_autherr")}</p>}
+                    {authErr && <p className="err">{t(authErr)}</p>}
                     <button className="savebtn" type="submit" disabled={authBusy}>{t("adm_enter_local")}</button>
                     <button className="logoutbtn" type="button" style={{ marginTop: 8, width: "100%" }} onClick={() => emailAuth("signup")} disabled={authBusy}>
                       {t("pray_signup")}
                     </button>
-                    <button className="logoutbtn" type="button" style={{ marginTop: 8, width: "100%" }} onClick={() => { setAuthMode("choice"); setAuthErr(false); }}>
+                    <button className="logoutbtn" type="button" style={{ marginTop: 8, width: "100%" }} onClick={() => { setAuthMode("choice"); setAuthErr(null); }}>
                       ← {t("back")}
                     </button>
                   </form>
