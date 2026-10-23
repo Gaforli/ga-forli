@@ -78,6 +78,7 @@ export const prayerRequests = pgTable("prayer_requests", {
   status: varchar("status", { length: 16 }).notNull().default("pending"),
   prayed: integer("prayed").notNull().default(0),
   authorName: varchar("author_name", { length: 255 }).default(""),
+  color: varchar("color", { length: 7 }).notNull().default("#FFF3B8"),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
 });
 
