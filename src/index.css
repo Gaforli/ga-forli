@@ -425,6 +425,16 @@ svg { display: block; }
 .prayjoin { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .prayjoin.joined { background: var(--color-secondary); }
 
+.colorfield { border: 0; padding: 0; margin: var(--space-4) 0; min-width: 0; }
+.colorfield .flabel { padding: 0; margin-bottom: 10px; }
+.colorchoices { display: flex; flex-wrap: wrap; gap: 12px; }
+.colorchoice { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 50%; border: 2px solid rgba(60, 40, 20, .14); box-shadow: 0 2px 5px rgba(60, 40, 20, .18); cursor: pointer; display: grid; place-items: center; color: var(--color-text-strong); font-size: 1.25rem; font-weight: 900; padding: 0; }
+.colorchoice.selected { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+.colorchoice:focus-visible { outline: 3px solid var(--color-secondary); outline-offset: 3px; }
+.postit-preview { width: min(100%, 260px); min-height: 145px; margin: 12px auto 24px; cursor: default; }
+.postit-preview:hover { transform: rotate(var(--tilt, 0deg)); box-shadow: 0 6px 12px rgba(60, 40, 20, .35); }
+.postit-preview .pbody { -webkit-line-clamp: 2; }
+
 @media (min-width: 560px) {
   .board { grid-template-columns: repeat(3, 1fr); }
   .sheetwrap { align-items: center; }
