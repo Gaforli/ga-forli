@@ -46,22 +46,16 @@ const monthlyInput = z.object({
 });
 
 // ── Richieste di preghiera ──
+const POSTIT_COLORS = ["#FFF3B8", "#DDE8C8", "#FFD9CF", "#FFE9B0", "#E3F0DA", "#FADCD5"] as const;
 const prayerInput = z.object({
   title: z.string().min(1, "Titolo obbligatorio").max(120),
   body: z.string().min(1, "Scrivi la richiesta").max(1000),
-  token: z.string().min(10), // access token Supabase Auth dell'utente loggato
+  name: z.string().max(120).default(""),
+  anonymous: z.boolean().default(false),
+  color: z.enum(POSTIT_COLORS).default(POSTIT_COLORS[0]),
+}).refine((v) => v.anonymous || v.name.trim().length > 0, {
+  message: "Inserisci il tuo nome oppure seleziona Resta anonimo",
 });
-
-// Verifica il token Supabase Auth chiamando l'API ufficiale e restituisce il nome utente.
-async function verifySupabaseUser(token: string): Promise<string> {
-  if (!env.supabaseUrl || !env.supabaseAnonKey) throw new Error("Supabase Auth non configurato");
-  const res = await fetch(`${env.supabaseUrl}/auth/v1/user`, {
-    headers: { Authorization: `Bearer ${token}`, apikey: env.supabaseAnonKey },
-  });
-  if (!res.ok) throw new Error("Accesso non valido");
-  const u = (await res.json()) as { email?: string; user_metadata?: { full_name?: string; name?: string } };
-  return u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split("@")[0] || "Anonimo";
-}
 
 // Invia la mail di notifica al Direttore GA tramite Resend (best-effort).
 async function notifyNewPrayer(title: string, body: string, author: string) {
@@ -201,6 +195,7 @@ export const contentRouter = createRouter({
       title: r.title,
       body: r.body ?? "",
       prayed: r.prayed,
+      color: r.color,
     }));
   }),
 
@@ -214,14 +209,16 @@ export const contentRouter = createRouter({
       return { ok: true };
     }),
 
-  // Invio richiesta: richiede il login (Google/Facebook/email via Supabase Auth).
+  // Invio aperto a tutti: la richiesta resta "pending" finché il Direttore GA
+  // non la approva. Il nome non viene mostrato pubblicamente sulla bacheca.
   submitPrayer: publicQuery.input(prayerInput).mutation(async ({ input }) => {
-    const author = await verifySupabaseUser(input.token);
+    const author = input.anonymous ? "Anonimo" : input.name.trim();
     const db = getDb();
     await db.insert(prayerRequests).values({
       title: input.title.trim(),
       body: input.body.trim(),
       authorName: author,
+      color: input.color,
     });
     await notifyNewPrayer(input.title.trim(), input.body.trim(), author);
     return { ok: true };
@@ -233,7 +230,7 @@ export const contentRouter = createRouter({
     const rows = await db.select().from(prayerRequests)
       .where(eq(prayerRequests.status, "pending"))
       .orderBy(desc(prayerRequests.createdAt));
-    return rows.map((r) => ({ id: Number(r.id), title: r.title, body: r.body ?? "", author: r.authorName ?? "" }));
+    return rows.map((r) => ({ id: Number(r.id), title: r.title, body: r.body ?? "", author: r.authorName ?? "", color: r.color }));
   }),
 
   approvePrayer: adminQuery
