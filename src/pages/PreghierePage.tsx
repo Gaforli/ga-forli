@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { trpc } from "@/providers/trpc";
-import { getSupabase } from "@/lib/supabase";
 import type { Lang } from "@/types";
 
 interface Props {
@@ -13,6 +12,7 @@ interface Prayer {
   title: string;
   body: string;
   prayed: number;
+  color: string;
 }
 
 const POSTIT_COLORS = ["#FFF3B8", "#DDE8C8", "#FFD9CF", "#FFE9B0", "#E3F0DA", "#FADCD5"];
@@ -51,78 +51,35 @@ export default function PreghierePage({ t, lang }: Props) {
     prayFor.mutate({ id });
   };
 
-  // ── Login Supabase (serve solo per inviare una richiesta) ──
-  const supabase = getSupabase();
-  const [sbUser, setSbUser] = useState<string | null>(null);
-  const [sbToken, setSbToken] = useState<string | null>(null);
-  const [authMode, setAuthMode] = useState<"choice" | "email">("choice");
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPass, setAuthPass] = useState("");
-  const [authErr, setAuthErr] = useState<string | null>(null);
-  const [authBusy, setAuthBusy] = useState(false);
-
-  const mapAuthError = (msg: string): string => {
-    const m = msg.toLowerCase();
-    if (m.includes("already registered") || m.includes("already_exists")) return "pray_err_exists";
-    if (m.includes("invalid login") || m.includes("invalid_credentials")) return "pray_err_credentials";
-    if (m.includes("not confirmed")) return "pray_err_confirm";
-    if (m.includes("password")) return "pray_err_password";
-    return "pray_autherr";
-  };
-
-  useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      const s = data.session;
-      if (s) {
-        setSbToken(s.access_token);
-        setSbUser(s.user.user_metadata?.full_name || s.user.email || null);
-      }
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSbToken(s?.access_token ?? null);
-      setSbUser(s ? (s.user.user_metadata?.full_name || s.user.email || null) : null);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, [supabase]);
-
-  const oauthLogin = async (provider: "google" | "facebook") => {
-    if (!supabase) return;
-    setAuthBusy(true);
-    await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: window.location.href } });
-    setAuthBusy(false);
-  };
-
-  const emailAuth = async (mode: "login" | "signup") => {
-    if (!supabase || !authEmail.trim() || !authPass) { setAuthErr("pray_fill"); return; }
-    setAuthBusy(true);
-    setAuthErr(null);
-    const fn = mode === "login" ? supabase.auth.signInWithPassword : supabase.auth.signUp;
-    const { data, error } = await fn({ email: authEmail.trim(), password: authPass });
-    setAuthBusy(false);
-    if (error) setAuthErr(mapAuthError(error.message));
-    else if (!data.session) setAuthErr("pray_err_confirm");
-  };
-
-  // ── Form richiesta ──
+  // ── Form richiesta: aperto a tutti, con approvazione del Direttore GA ──
   const [writeOpen, setWriteOpen] = useState(false);
   const [prTitle, setPrTitle] = useState("");
   const [prBody, setPrBody] = useState("");
+  const [prName, setPrName] = useState("");
+  const [prAnonymous, setPrAnonymous] = useState(false);
+  const [prColor, setPrColor] = useState(POSTIT_COLORS[0]);
   const [prDone, setPrDone] = useState(false);
-  const [prErr, setPrErr] = useState(false);
+  const [prErr, setPrErr] = useState<string | null>(null);
 
   const submitPrayer = trpc.content.submitPrayer.useMutation({
     onSuccess: () => {
       setPrDone(true);
-      setPrTitle(""); setPrBody("");
+      setPrTitle(""); setPrBody(""); setPrName(""); setPrAnonymous(false); setPrColor(POSTIT_COLORS[0]);
     },
-    onError: () => setPrErr(true),
+    onError: () => setPrErr("pray_fill"),
   });
 
   const sendPrayer = () => {
-    setPrErr(false);
-    if (!prTitle.trim() || !prBody.trim() || !sbToken) { setPrErr(true); return; }
-    submitPrayer.mutate({ title: prTitle.trim(), body: prBody.trim(), token: sbToken });
+    setPrErr(null);
+    if (!prTitle.trim() || !prBody.trim()) { setPrErr("pray_fill"); return; }
+    if (!prAnonymous && !prName.trim()) { setPrErr("pray_err_name"); return; }
+    submitPrayer.mutate({
+      title: prTitle.trim(),
+      body: prBody.trim(),
+      name: prName.trim(),
+      anonymous: prAnonymous,
+      color: prColor,
+    });
   };
 
   return (
@@ -148,7 +105,7 @@ export default function PreghierePage({ t, lang }: Props) {
               key={p.id}
               style={{
                 ["--tilt" as string]: POSTIT_TILTS[i % POSTIT_TILTS.length],
-                background: POSTIT_COLORS[i % POSTIT_COLORS.length],
+                background: POSTIT_COLORS.includes(p.color) ? p.color : POSTIT_COLORS[i % POSTIT_COLORS.length],
               }}
               onClick={() => setOpenId(p.id)}
             >
@@ -167,7 +124,7 @@ export default function PreghierePage({ t, lang }: Props) {
         </div>
       )}
 
-      <button className="btn btn-primary praywrite" onClick={() => { setWriteOpen(true); setPrDone(false); setPrErr(false); }}>
+      <button className="btn btn-primary praywrite" onClick={() => { setWriteOpen(true); setPrDone(false); setPrErr(null); }}>
         <span>{t("pray_write")}</span>
       </button>
 
@@ -200,53 +157,50 @@ export default function PreghierePage({ t, lang }: Props) {
 
             {prDone ? (
               <p className="savedmsg" style={{ display: "block", textAlign: "center", padding: "18px 0" }}>{t("pray_sent")}</p>
-            ) : !supabase ? (
-              <p className="err">{t("pray_noconfig")}</p>
-            ) : !sbToken ? (
-              <>
-                <p className="sub" style={{ marginBottom: 12 }}>{t("pray_login_d")}</p>
-                {authMode === "choice" && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <button className="savebtn" style={{ background: "#fff", color: "#243B53", border: "1.5px solid var(--color-border)" }} onClick={() => oauthLogin("google")} disabled={authBusy}>
-                      G · {t("pray_google")}
-                    </button>
-                    <button className="savebtn" style={{ background: "#1877F2" }} onClick={() => oauthLogin("facebook")} disabled={authBusy}>
-                      f · {t("pray_facebook")}
-                    </button>
-                    <button className="savebtn" style={{ background: "var(--color-secondary)" }} onClick={() => setAuthMode("email")}>
-                      ✉ · {t("pray_email")}
-                    </button>
-                  </div>
-                )}
-                {authMode === "email" && (
-                  <form onSubmit={(e) => { e.preventDefault(); emailAuth("login"); }}>
-                    <label className="flabel" htmlFor="prEmail">{t("adm_email")}</label>
-                    <input className="finput" id="prEmail" type="email" autoComplete="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} />
-                    <label className="flabel" htmlFor="prPass">{t("adm_password")}</label>
-                    <input className="finput" id="prPass" type="password" autoComplete="current-password" value={authPass} onChange={(e) => setAuthPass(e.target.value)} />
-                    {authErr && <p className="err">{t(authErr)}</p>}
-                    <button className="savebtn" type="submit" disabled={authBusy}>{t("adm_enter_local")}</button>
-                    <button className="logoutbtn" type="button" style={{ marginTop: 8, width: "100%" }} onClick={() => emailAuth("signup")} disabled={authBusy}>
-                      {t("pray_signup")}
-                    </button>
-                    <button className="logoutbtn" type="button" style={{ marginTop: 8, width: "100%" }} onClick={() => { setAuthMode("choice"); setAuthErr(null); }}>
-                      ← {t("back")}
-                    </button>
-                  </form>
-                )}
-              </>
             ) : (
               <>
-                <p className="sub" style={{ marginBottom: 12 }}>{t("pray_as")} <b>{sbUser}</b></p>
-                <label className="flabel" htmlFor="prTitle">{t("pray_title")}</label>
+                <p className="sub" style={{ marginBottom: 12 }}>{t("pray_form_d")}</p>
+                <label className="flabel" htmlFor="prTitle">{t("pray_forwhom")}</label>
                 <input className="finput" id="prTitle" maxLength={120} value={prTitle} onChange={(e) => setPrTitle(e.target.value)} placeholder={t("pray_title_ph")} />
                 <label className="flabel" htmlFor="prBody">{t("pray_body")}</label>
                 <textarea className="ftext" id="prBody" maxLength={1000} style={{ minHeight: 110 }} value={prBody} onChange={(e) => setPrBody(e.target.value)} placeholder={t("pray_body_ph")} />
-                {prErr && <p className="err">{t("pray_fill")}</p>}
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  <div style={{ flex: "1 1 180px" }}>
+                    <label className="flabel" htmlFor="prName">{t("pray_name")}</label>
+                    <input className="finput" id="prName" maxLength={120} value={prName} disabled={prAnonymous} onChange={(e) => setPrName(e.target.value)} placeholder={t("pray_name_ph")} />
+                  </div>
+                  <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 34, cursor: "pointer", fontWeight: 600 }}>
+                    <input type="checkbox" checked={prAnonymous} onChange={(e) => { setPrAnonymous(e.target.checked); if (e.target.checked) setPrErr(null); }} />
+                    {t("pray_anonymous")}
+                  </label>
+                </div>
+                <fieldset className="colorfield">
+                  <legend className="flabel">{t("pray_color")}</legend>
+                  <div className="colorchoices" role="group" aria-label={t("pray_color")}>
+                    {POSTIT_COLORS.map((color, i) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`colorchoice${prColor === color ? " selected" : ""}`}
+                        style={{ background: color }}
+                        aria-label={t(`pray_color_${i}`)}
+                        aria-pressed={prColor === color}
+                        title={t(`pray_color_${i}`)}
+                        onClick={() => setPrColor(color)}
+                      >
+                        {prColor === color && <span aria-hidden="true">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <span className="flabel">{t("pray_preview")}</span>
+                <div className="postit postit-preview" style={{ background: prColor, ["--tilt" as string]: "-1.2deg" }} aria-label={t("pray_preview")}>
+                  <span className="pin" style={{ background: PIN_COLORS[POSTIT_COLORS.indexOf(prColor)] }} aria-hidden="true" />
+                  <span className="ptitle2">{prTitle || t("pray_preview_title")}</span>
+                  <span className="pbody">{prBody || t("pray_preview_body")}</span>
+                </div>
+                {prErr && <p className="err">{t(prErr)}</p>}
                 <button className="savebtn" onClick={sendPrayer} disabled={submitPrayer.isPending}>{t("pray_send")}</button>
-                <button className="logoutbtn" style={{ marginTop: 8, width: "100%" }} onClick={() => { void supabase.auth.signOut(); }}>
-                  {t("adm_logout")}
-                </button>
               </>
             )}
           </div>
