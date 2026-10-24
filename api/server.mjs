@@ -69,22 +69,22 @@ var require_dist = __commonJS({
       if (len < 2)
         return obj;
       const dec = options?.decode || decode4;
-      let index = 0;
+      let index2 = 0;
       do {
-        const eqIdx = eqIndex(str, index, len);
+        const eqIdx = eqIndex(str, index2, len);
         if (eqIdx === -1)
           break;
-        const endIdx = endIndex(str, index, len);
+        const endIdx = endIndex(str, index2, len);
         if (eqIdx > endIdx) {
-          index = str.lastIndexOf(";", eqIdx - 1) + 1;
+          index2 = str.lastIndexOf(";", eqIdx - 1) + 1;
           continue;
         }
-        const key = valueSlice(str, index, eqIdx);
+        const key = valueSlice(str, index2, eqIdx);
         if (obj[key] === void 0) {
           obj[key] = dec(valueSlice(str, eqIdx + 1, endIdx));
         }
-        index = endIdx + 1;
-      } while (index < len);
+        index2 = endIdx + 1;
+      } while (index2 < len);
       return obj;
     }
     function stringifyCookie(cookie3, options) {
@@ -194,11 +194,11 @@ var require_dist = __commonJS({
         name: valueSlice(str, 0, eqIdx),
         value: dec(valueSlice(str, eqIdx + 1, endIdx))
       };
-      let index = endIdx + 1;
-      while (index < len) {
-        const endIdx2 = endIndex(str, index, len);
-        const eqIdx2 = eqIndex(str, index, endIdx2);
-        const attr = eqIdx2 === -1 ? valueSlice(str, index, endIdx2) : valueSlice(str, index, eqIdx2);
+      let index2 = endIdx + 1;
+      while (index2 < len) {
+        const endIdx2 = endIndex(str, index2, len);
+        const eqIdx2 = eqIndex(str, index2, endIdx2);
+        const attr = eqIdx2 === -1 ? valueSlice(str, index2, endIdx2) : valueSlice(str, index2, eqIdx2);
         const val = eqIdx2 === -1 ? void 0 : valueSlice(str, eqIdx2 + 1, endIdx2);
         switch (attr.toLowerCase()) {
           case "httponly":
@@ -244,17 +244,17 @@ var require_dist = __commonJS({
             }
             break;
         }
-        index = endIdx2 + 1;
+        index2 = endIdx2 + 1;
       }
       return setCookie;
     }
     function endIndex(str, min, len) {
-      const index = str.indexOf(";", min);
-      return index === -1 ? len : index;
+      const index2 = str.indexOf(";", min);
+      return index2 === -1 ? len : index2;
     }
     function eqIndex(str, min, max) {
-      const index = str.indexOf("=", min);
-      return index < max ? index : -1;
+      const index2 = str.indexOf("=", min);
+      return index2 < max ? index2 : -1;
     }
     function valueSlice(str, min, max) {
       let start = min;
@@ -1563,13 +1563,13 @@ var init_vite = __esm({
 // ../../mnt/agents/output/app/node_modules/hono/dist/compose.js
 var compose = (middleware, onError, onNotFound) => {
   return (context, next) => {
-    let index = -1;
+    let index2 = -1;
     return dispatch(0);
     async function dispatch(i) {
-      if (i <= index) {
+      if (i <= index2) {
         throw new Error("next() called multiple times");
       }
-      index = i;
+      index2 = i;
       let res;
       let isError2 = false;
       let handler;
@@ -1731,8 +1731,8 @@ var handleParsingNestedValues = (form, key, value, state) => {
   if (keys.length > MAX_NESTING_DEPTH + 1) {
     throwNestingLimitExceeded();
   }
-  keys.forEach((key2, index) => {
-    if (index === keys.length - 1) {
+  keys.forEach((key2, index2) => {
+    if (index2 === keys.length - 1) {
       nestedForm[key2] = value;
     } else {
       if (!nestedForm[key2] || typeof nestedForm[key2] !== "object" || Array.isArray(nestedForm[key2]) || nestedForm[key2] instanceof File) {
@@ -1764,8 +1764,8 @@ var splitRoutingPath = (routePath) => {
 };
 var extractGroupsFromPath = (path2) => {
   const groups = [];
-  path2 = path2.replace(/\{[^}]+\}/g, (match2, index) => {
-    const mark = `@${index}`;
+  path2 = path2.replace(/\{[^}]+\}/g, (match2, index2) => {
+    const mark = `@${index2}`;
     groups.push([mark, match2]);
     return mark;
   });
@@ -3113,8 +3113,8 @@ function match(method, path2) {
     if (!match3) {
       return [[], emptyParam];
     }
-    const index = match3.indexOf("", 1);
-    return [matcher[1][index], match3];
+    const index2 = match3.indexOf("", 1);
+    return [matcher[1][index2], match3];
   });
   this.match = match2;
   return match2(method, path2);
@@ -3150,7 +3150,7 @@ var Node = class _Node {
   #index;
   #varIndex;
   #children = createNullObject();
-  insert(tokens, index, paramMap, context, isStatic) {
+  insert(tokens, index2, paramMap, context, isStatic) {
     let node = this;
     for (let i = 0, len = tokens.length; i < len; i++) {
       const token = tokens[i];
@@ -3205,7 +3205,7 @@ var Node = class _Node {
     if (node.#index !== void 0) {
       throw PATH_ERROR;
     }
-    node.#index = isStatic ? -1 : index;
+    node.#index = isStatic ? -1 : index2;
   }
   buildRegExpStr() {
     const childKeys = Object.keys(this.#children).sort(compareKey);
@@ -4364,20 +4364,20 @@ var jsonContentTypeHandler = {
         message: '"input" needs to be an object when doing a batch call'
       });
       const acc = emptyObject();
-      for (const index of paths.keys()) {
-        const input = inputs[index];
-        if (input !== void 0) acc[index] = opts.router._def._config.transformer.input.deserialize(input);
+      for (const index2 of paths.keys()) {
+        const input = inputs[index2];
+        if (input !== void 0) acc[index2] = opts.router._def._config.transformer.input.deserialize(input);
       }
       return acc;
     });
-    const calls = await Promise.all(paths.map(async (path2, index) => {
+    const calls = await Promise.all(paths.map(async (path2, index2) => {
       const procedure = await getProcedureAtPath(opts.router, path2);
       return {
-        batchIndex: index,
+        batchIndex: index2,
         path: path2,
         procedure,
         getRawInput: async () => {
-          let input = (await getInputs.read())[index];
+          let input = (await getInputs.read())[index2];
           if ((procedure === null || procedure === void 0 ? void 0 : procedure._def.type) === "subscription") {
             var _ref2, _opts$headers$get;
             const lastEventId = (_ref2 = (_opts$headers$get = opts.headers.get("last-event-id")) !== null && _opts$headers$get !== void 0 ? _opts$headers$get : opts.searchParams.get("lastEventId")) !== null && _ref2 !== void 0 ? _ref2 : opts.searchParams.get("Last-Event-Id");
@@ -4393,7 +4393,7 @@ var jsonContentTypeHandler = {
         },
         result: () => {
           var _getInputs$result;
-          return (_getInputs$result = getInputs.result()) === null || _getInputs$result === void 0 ? void 0 : _getInputs$result[index];
+          return (_getInputs$result = getInputs.result()) === null || _getInputs$result === void 0 ? void 0 : _getInputs$result[index2];
         }
       };
     }));
@@ -4689,12 +4689,12 @@ function withResolvers() {
 function listWithMember(arr, member) {
   return [...arr, member];
 }
-function listWithoutIndex(arr, index) {
-  return [...arr.slice(0, index), ...arr.slice(index + 1)];
+function listWithoutIndex(arr, index2) {
+  return [...arr.slice(0, index2), ...arr.slice(index2 + 1)];
 }
 function listWithoutMember(arr, member) {
-  const index = arr.indexOf(member);
-  if (index !== -1) return listWithoutIndex(arr, index);
+  const index2 = arr.indexOf(member);
+  if (index2 !== -1) return listWithoutIndex(arr, index2);
   return arr;
 }
 var _Symbol;
@@ -5775,9 +5775,9 @@ async function resolveResponse(opts) {
         * }
         */
         maxDepth: Infinity,
-        data: rpcCalls.map(async (res, index) => {
+        data: rpcCalls.map(async (res, index2) => {
           const [error48, result] = await res;
-          const call = info.calls[index];
+          const call = info.calls[index2];
           if (error48) {
             var _procedure$_def$type, _procedure;
             return { error: getErrorShape({
@@ -5836,8 +5836,8 @@ async function resolveResponse(opts) {
       }), void 0];
       return res;
     });
-    const resultAsRPCResponse = results.map(([error48, result], index) => {
-      const call = info.calls[index];
+    const resultAsRPCResponse = results.map(([error48, result], index2) => {
+      const call = info.calls[index2];
       if (error48) {
         var _call$procedure$_def$4, _call$procedure5;
         return { error: getErrorShape({
@@ -7339,8 +7339,8 @@ function haveSameKeys(left, right) {
   if (leftKeys.length !== rightKeys.length) {
     return false;
   }
-  for (const [index, key] of leftKeys.entries()) {
-    if (key !== rightKeys[index]) {
+  for (const [index2, key] of leftKeys.entries()) {
+    if (key !== rightKeys[index2]) {
       return false;
     }
   }
@@ -9247,7 +9247,7 @@ function mapRelationalRow(tablesConfig, tableConfig, row, buildQueryResultSelect
 }
 
 // server/auth-router.ts
-var cookie = __toESM(require_dist());
+var cookie = __toESM(require_dist(), 1);
 
 // ../../mnt/agents/output/app/node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -12097,11 +12097,11 @@ var $ZodDate = /* @__PURE__ */ $constructor("$ZodDate", (inst, def) => {
     return payload;
   };
 });
-function handleArrayResult(result, final, index) {
+function handleArrayResult(result, final, index2) {
   if (result.issues.length) {
-    final.issues.push(...prefixIssues(index, result.issues));
+    final.issues.push(...prefixIssues(index2, result.issues));
   }
-  final.value[index] = result.value;
+  final.value[index2] = result.value;
 }
 var $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
   $ZodType.init(inst, def);
@@ -12592,14 +12592,14 @@ function mergeValues(a, b2) {
       return { valid: false, mergeErrorPath: [] };
     }
     const newArray = [];
-    for (let index = 0; index < a.length; index++) {
-      const itemA = a[index];
-      const itemB = b2[index];
+    for (let index2 = 0; index2 < a.length; index2++) {
+      const itemA = a[index2];
+      const itemB = b2[index2];
       const sharedValue = mergeValues(itemA, itemB);
       if (!sharedValue.valid) {
         return {
           valid: false,
-          mergeErrorPath: [index, ...sharedValue.mergeErrorPath]
+          mergeErrorPath: [index2, ...sharedValue.mergeErrorPath]
         };
       }
       newArray.push(sharedValue.data);
@@ -12715,11 +12715,11 @@ var $ZodTuple = /* @__PURE__ */ $constructor("$ZodTuple", (inst, def) => {
     return payload;
   };
 });
-function handleTupleResult(result, final, index) {
+function handleTupleResult(result, final, index2) {
   if (result.issues.length) {
-    final.issues.push(...prefixIssues(index, result.issues));
+    final.issues.push(...prefixIssues(index2, result.issues));
   }
-  final.value[index] = result.value;
+  final.value[index2] = result.value;
 }
 var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
   $ZodType.init(inst, def);
@@ -23245,16 +23245,16 @@ var codeblock = `
 This is a client-only function.
 If you want to call this function on the server, see https://trpc.io/docs/v11/server/server-side-calls
 `.trim();
-async function callRecursive(index, _def, opts) {
+async function callRecursive(index2, _def, opts) {
   try {
-    const middleware = _def.middlewares[index];
+    const middleware = _def.middlewares[index2];
     return await middleware(_objectSpread2(_objectSpread2({}, opts), {}, {
       meta: _def.meta,
       input: opts.input,
       next(_nextOpts) {
         var _nextOpts$getRawInput;
         const nextOpts = _nextOpts;
-        return callRecursive(index + 1, _def, _objectSpread2(_objectSpread2({}, opts), {}, {
+        return callRecursive(index2 + 1, _def, _objectSpread2(_objectSpread2({}, opts), {}, {
           ctx: (nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.ctx) ? _objectSpread2(_objectSpread2({}, opts.ctx), nextOpts.ctx) : opts.ctx,
           input: nextOpts && "input" in nextOpts ? nextOpts.input : opts.input,
           getRawInput: (_nextOpts$getRawInput = nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.getRawInput) !== null && _nextOpts$getRawInput !== void 0 ? _nextOpts$getRawInput : opts.getRawInput
@@ -23811,8 +23811,8 @@ var setDeep = (object2, path2, mapper) => {
   for (let i = 0; i < path2.length - 1; i++) {
     const key = path2[i];
     if (isArray(parent)) {
-      const index = +key;
-      parent = parent[index];
+      const index2 = +key;
+      parent = parent[index2];
     } else if (isPlainObject3(parent)) {
       parent = parent[key];
     } else if (isSet(parent)) {
@@ -23993,17 +23993,17 @@ var walker = (object2, identities, superJson, dedupe, path2 = [], objectsInThisP
   const transformed = transformationResult?.value ?? object2;
   const transformedValue = isArray(transformed) ? [] : {};
   const innerAnnotations = {};
-  forEach(transformed, (value, index) => {
-    if (index === "__proto__" || index === "constructor" || index === "prototype") {
-      throw new Error(`Detected property ${index}. This is a prototype pollution risk, please remove it from your object.`);
+  forEach(transformed, (value, index2) => {
+    if (index2 === "__proto__" || index2 === "constructor" || index2 === "prototype") {
+      throw new Error(`Detected property ${index2}. This is a prototype pollution risk, please remove it from your object.`);
     }
-    const recursiveResult = walker(value, identities, superJson, dedupe, [...path2, index], [...objectsInThisPath, object2], seenObjects);
-    transformedValue[index] = recursiveResult.transformedValue;
+    const recursiveResult = walker(value, identities, superJson, dedupe, [...path2, index2], [...objectsInThisPath, object2], seenObjects);
+    transformedValue[index2] = recursiveResult.transformedValue;
     if (isArray(recursiveResult.annotations)) {
-      innerAnnotations[escapeKey(index)] = recursiveResult.annotations;
+      innerAnnotations[escapeKey(index2)] = recursiveResult.annotations;
     } else if (isPlainObject3(recursiveResult.annotations)) {
       forEach(recursiveResult.annotations, (tree, key) => {
-        innerAnnotations[escapeKey(index) + "." + key] = tree;
+        innerAnnotations[escapeKey(index2) + "." + key] = tree;
       });
     }
   });
@@ -25621,6 +25621,9 @@ __export(schema_exports, {
   adminAccounts: () => adminAccounts,
   eventCatEnum: () => eventCatEnum,
   events: () => events,
+  gameIdentities: () => gameIdentities,
+  gameRuns: () => gameRuns,
+  gameSessions: () => gameSessions,
   prayerRequests: () => prayerRequests,
   roleEnum: () => roleEnum,
   siteContent: () => siteContent,
@@ -25694,6 +25697,118 @@ var SelectionProxyHandler = class _SelectionProxyHandler {
     return new Proxy(value, new _SelectionProxyHandler(this.config));
   }
 };
+
+// ../../mnt/agents/output/app/node_modules/drizzle-orm/pg-core/indexes.js
+var IndexBuilderOn = class {
+  constructor(unique, name) {
+    this.unique = unique;
+    this.name = name;
+  }
+  static [entityKind] = "PgIndexBuilderOn";
+  on(...columns) {
+    return new IndexBuilder(
+      columns.map((it) => {
+        if (is(it, SQL)) {
+          return it;
+        }
+        it = it;
+        const clonedIndexedColumn = new IndexedColumn(it.name, !!it.keyAsName, it.columnType, it.indexConfig);
+        it.indexConfig = JSON.parse(JSON.stringify(it.defaultConfig));
+        return clonedIndexedColumn;
+      }),
+      this.unique,
+      false,
+      this.name
+    );
+  }
+  onOnly(...columns) {
+    return new IndexBuilder(
+      columns.map((it) => {
+        if (is(it, SQL)) {
+          return it;
+        }
+        it = it;
+        const clonedIndexedColumn = new IndexedColumn(it.name, !!it.keyAsName, it.columnType, it.indexConfig);
+        it.indexConfig = it.defaultConfig;
+        return clonedIndexedColumn;
+      }),
+      this.unique,
+      true,
+      this.name
+    );
+  }
+  /**
+   * Specify what index method to use. Choices are `btree`, `hash`, `gist`, `spgist`, `gin`, `brin`, or user-installed access methods like `bloom`. The default method is `btree.
+   *
+   * If you have the `pg_vector` extension installed in your database, you can use the `hnsw` and `ivfflat` options, which are predefined types.
+   *
+   * **You can always specify any string you want in the method, in case Drizzle doesn't have it natively in its types**
+   *
+   * @param method The name of the index method to be used
+   * @param columns
+   * @returns
+   */
+  using(method, ...columns) {
+    return new IndexBuilder(
+      columns.map((it) => {
+        if (is(it, SQL)) {
+          return it;
+        }
+        it = it;
+        const clonedIndexedColumn = new IndexedColumn(it.name, !!it.keyAsName, it.columnType, it.indexConfig);
+        it.indexConfig = JSON.parse(JSON.stringify(it.defaultConfig));
+        return clonedIndexedColumn;
+      }),
+      this.unique,
+      true,
+      this.name,
+      method
+    );
+  }
+};
+var IndexBuilder = class {
+  static [entityKind] = "PgIndexBuilder";
+  /** @internal */
+  config;
+  constructor(columns, unique, only, name, method = "btree") {
+    this.config = {
+      name,
+      columns,
+      unique,
+      only,
+      method
+    };
+  }
+  concurrently() {
+    this.config.concurrently = true;
+    return this;
+  }
+  with(obj) {
+    this.config.with = obj;
+    return this;
+  }
+  where(condition) {
+    this.config.where = condition;
+    return this;
+  }
+  /** @internal */
+  build(table) {
+    return new Index(this.config, table);
+  }
+};
+var Index = class {
+  static [entityKind] = "PgIndex";
+  config;
+  constructor(config2, table) {
+    this.config = { ...config2, table };
+  }
+};
+function index(name) {
+  return new IndexBuilderOn(false, name);
+}
+function uniqueIndex(name) {
+  return new IndexBuilderOn(true, name);
+}
 
 // ../../mnt/agents/output/app/node_modules/drizzle-orm/casing.js
 function toSnakeCase(input) {
@@ -25912,8 +26027,8 @@ var PgDialect = class {
       return void 0;
     }
     const joinsArray = [];
-    for (const [index, joinMeta] of joins.entries()) {
-      if (index === 0) {
+    for (const [index2, joinMeta] of joins.entries()) {
+      if (index2 === 0) {
         joinsArray.push(sql` `);
       }
       const table = joinMeta.table;
@@ -25940,7 +26055,7 @@ var PgDialect = class {
           sql`${sql.raw(joinMeta.joinType)} join${lateralSql} ${table}${onSql}`
         );
       }
-      if (index < joins.length - 1) {
+      if (index2 < joins.length - 1) {
         joinsArray.push(sql` `);
       }
     }
@@ -29050,6 +29165,35 @@ var prayerRequests = pgTable("prayer_requests", {
   color: varchar("color", { length: 7 }).notNull().default("#FFF3B8"),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull()
 });
+var gameIdentities = pgTable("game_identities", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull()
+});
+var gameSessions = pgTable("game_sessions", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  identityId: varchar("identity_id", { length: 36 }).notNull(),
+  configVersion: integer("config_version").notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { mode: "date", withTimezone: true }).notNull()
+}, (table) => [
+  index("game_sessions_identity_created_idx").on(table.identityId, table.createdAt)
+]);
+var gameRuns = pgTable("game_runs", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  sessionId: varchar("session_id", { length: 36 }).notNull(),
+  identityId: varchar("identity_id", { length: 36 }).notNull(),
+  nickname: varchar("nickname", { length: 20 }).notNull(),
+  score: integer("score").notNull(),
+  perfects: integer("perfects").notNull(),
+  ticks: integer("ticks").notNull(),
+  configVersion: integer("config_version").notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  uniqueIndex("game_runs_session_unique").on(table.sessionId),
+  index("game_runs_identity_idx").on(table.identityId),
+  index("game_runs_created_idx").on(table.createdAt),
+  index("game_runs_rank_idx").on(table.score, table.perfects, table.createdAt)
+]);
 
 // ../../mnt/agents/output/app/node_modules/postgres/src/index.js
 import os from "os";
@@ -29556,23 +29700,23 @@ var Result = class extends Array {
 var queue_default = Queue;
 function Queue(initial = []) {
   let xs = initial.slice();
-  let index = 0;
+  let index2 = 0;
   return {
     get length() {
-      return xs.length - index;
+      return xs.length - index2;
     },
     remove: (x) => {
-      const index2 = xs.indexOf(x);
-      return index2 === -1 ? null : (xs.splice(index2, 1), x);
+      const index3 = xs.indexOf(x);
+      return index3 === -1 ? null : (xs.splice(index3, 1), x);
     },
     push: (x) => (xs.push(x), x),
     shift: () => {
-      const out = xs[index++];
-      if (index === xs.length) {
-        index = 0;
+      const out = xs[index2++];
+      if (index2 === xs.length) {
+        index2 = 0;
         xs = [];
       } else {
-        xs[index - 1] = void 0;
+        xs[index2 - 1] = void 0;
       }
       return out;
     }
@@ -30050,16 +30194,16 @@ function Connection(options, queues = {}, { onopen = noop2, onend = noop2, onclo
     ))(xs);
   }
   function DataRow(x) {
-    let index = 7;
+    let index2 = 7;
     let length2;
     let column;
     let value;
     const row = query.isRaw ? new Array(query.statement.columns.length) : {};
     for (let i = 0; i < query.statement.columns.length; i++) {
       column = query.statement.columns[i];
-      length2 = x.readInt32BE(index);
-      index += 4;
-      value = length2 === -1 ? null : query.isRaw === true ? x.subarray(index, index += length2) : column.parser === void 0 ? x.toString("utf8", index, index += length2) : column.parser.array === true ? column.parser(x.toString("utf8", index + 1, index += length2)) : column.parser(x.toString("utf8", index, index += length2));
+      length2 = x.readInt32BE(index2);
+      index2 += 4;
+      value = length2 === -1 ? null : query.isRaw === true ? x.subarray(index2, index2 += length2) : column.parser === void 0 ? x.toString("utf8", index2, index2 += length2) : column.parser.array === true ? column.parser(x.toString("utf8", index2 + 1, index2 += length2)) : column.parser(x.toString("utf8", index2, index2 += length2));
       query.isRaw ? row[i] = query.isRaw === true ? value : transform2.value.from ? transform2.value.from(value, column) : value : row[column.name] = transform2.value.from ? transform2.value.from(value, column) : value;
     }
     query.forEachFn ? query.forEachFn(transform2.row.from ? transform2.row.from(row) : row, result) : result[rows++] = transform2.row.from ? transform2.row.from(row) : row;
@@ -30143,23 +30287,23 @@ function Connection(options, queues = {}, { onopen = noop2, onend = noop2, onclo
       query.statement.columns = null;
     }
     const length2 = x.readUInt16BE(5);
-    let index = 7;
+    let index2 = 7;
     let start;
     query.statement.columns = Array(length2);
     for (let i = 0; i < length2; ++i) {
-      start = index;
-      while (x[index++] !== 0) ;
-      const table = x.readUInt32BE(index);
-      const number4 = x.readUInt16BE(index + 4);
-      const type = x.readUInt32BE(index + 6);
+      start = index2;
+      while (x[index2++] !== 0) ;
+      const table = x.readUInt32BE(index2);
+      const number4 = x.readUInt16BE(index2 + 4);
+      const type = x.readUInt32BE(index2 + 6);
       query.statement.columns[i] = {
-        name: transform2.column.from ? transform2.column.from(x.toString("utf8", start, index - 1)) : x.toString("utf8", start, index - 1),
+        name: transform2.column.from ? transform2.column.from(x.toString("utf8", start, index2 - 1)) : x.toString("utf8", start, index2 - 1),
         parser: parsers2[type],
         table,
         number: number4,
         type
       };
-      index += 18;
+      index2 += 18;
     }
     result.statement = query.statement;
     if (query.onlyDescribe)
@@ -30279,11 +30423,11 @@ function Connection(options, queues = {}, { onopen = noop2, onend = noop2, onclo
   function NotificationResponse(x) {
     if (!onnotify)
       return;
-    let index = 9;
-    while (x[index++] !== 0) ;
+    let index2 = 9;
+    while (x[index2++] !== 0) ;
     onnotify(
-      x.toString("utf8", 9, index - 1),
-      x.toString("utf8", index, x.length - 1)
+      x.toString("utf8", 9, index2 - 1),
+      x.toString("utf8", index2, x.length - 1)
     );
   }
   async function PortalSuspended() {
@@ -31662,11 +31806,223 @@ var contentRouter = createRouter({
   })
 });
 
+// server/game-router.ts
+import { randomUUID } from "node:crypto";
+
+// contracts/tower-game.ts
+var TOWER_CONFIG_VERSION = 1;
+var TOWER_CONFIG = {
+  tickRate: 60,
+  baseSize: 4.4,
+  blockHeight: 0.56,
+  travel: 5.2,
+  initialSpeed: 2.35,
+  speedPerFloor: 0.055,
+  maxSpeed: 5.4,
+  perfectTolerance: 0.13,
+  placementLockTicks: 12,
+  maxTicks: 60 * 60 * 12,
+  maxCommands: 1e3
+};
+var round = (n) => Math.round(n * 1e6) / 1e6;
+function speedForLevel(level) {
+  return Math.min(TOWER_CONFIG.maxSpeed, TOWER_CONFIG.initialSpeed + level * TOWER_CONFIG.speedPerFloor);
+}
+function activePosition(state, tick = state.tick) {
+  const elapsed = Math.max(0, tick - state.activeBorn) / TOWER_CONFIG.tickRate;
+  const span = TOWER_CONFIG.travel * 2;
+  const phase = (elapsed * speedForLevel(state.score) % (span * 2) + span * 2) % (span * 2);
+  const offset = phase <= span ? phase - TOWER_CONFIG.travel : span * 2 - phase - TOWER_CONFIG.travel;
+  return round(offset);
+}
+function createTowerState() {
+  const base = { x: 0, z: 0, width: TOWER_CONFIG.baseSize, depth: TOWER_CONFIG.baseSize, level: -1 };
+  const active = { x: 0, z: 0, width: base.width, depth: base.depth, level: 0 };
+  return { tick: 0, score: 0, perfects: 0, over: false, lockedUntil: 0, blocks: [base], active, activeBorn: 0, axis: "x" };
+}
+function placeTowerBlock(state, tick) {
+  if (state.over || !Number.isInteger(tick) || tick <= state.tick || tick < state.lockedUntil) return { kind: "ignored" };
+  state.tick = tick;
+  const previous = state.blocks[state.blocks.length - 1];
+  const axis = state.axis;
+  const moving = { ...state.active };
+  const offset = activePosition(state, tick);
+  moving[axis] = offset;
+  const sizeKey = axis === "x" ? "width" : "depth";
+  const delta = round(offset - previous[axis]);
+  const overlap = round(previous[sizeKey] - Math.abs(delta));
+  const level = state.score;
+  if (overlap <= 0) {
+    state.over = true;
+    return { kind: "miss", debris: { ...moving, [axis]: offset, level, axis, side: Math.sign(delta) || 1 } };
+  }
+  const perfect = Math.abs(delta) <= TOWER_CONFIG.perfectTolerance;
+  let debris = null;
+  if (perfect) {
+    moving.x = previous.x;
+    moving.z = previous.z;
+    state.perfects += 1;
+  } else {
+    const direction = Math.sign(delta);
+    moving[axis] = round(previous[axis] + delta / 2);
+    moving[sizeKey] = overlap;
+    debris = {
+      ...moving,
+      [axis]: round(previous[axis] + direction * (previous[sizeKey] / 2 + overlap / 2)),
+      [sizeKey]: round(Math.abs(delta)),
+      level,
+      axis,
+      side: direction
+    };
+  }
+  state.blocks.push(moving);
+  state.score += 1;
+  state.axis = axis === "x" ? "z" : "x";
+  state.activeBorn = tick;
+  state.lockedUntil = tick + TOWER_CONFIG.placementLockTicks;
+  state.active = { x: moving.x, z: moving.z, width: moving.width, depth: moving.depth, level: state.score };
+  return { kind: "placed", perfect, debris };
+}
+function replayTower(commands, maxTicks = TOWER_CONFIG.maxTicks) {
+  if (commands.length > TOWER_CONFIG.maxCommands) throw new Error("Troppi comandi");
+  const state = createTowerState();
+  let previousTick = 0;
+  const placements = [];
+  for (const command of commands) {
+    if (!Number.isInteger(command.tick) || command.tick <= previousTick || command.tick > maxTicks) throw new Error("Sequenza temporale non valida");
+    previousTick = command.tick;
+    const placement = placeTowerBlock(state, command.tick);
+    if (placement.kind === "ignored") throw new Error("Comando durante una transizione");
+    placements.push(placement);
+    if (state.over && command !== commands[commands.length - 1]) throw new Error("Comandi dopo la fine della partita");
+  }
+  return { state, placements };
+}
+function normalizeNickname(value) {
+  return value.normalize("NFC").trim().replace(/\s+/g, " ");
+}
+function validNickname(value) {
+  const name = normalizeNickname(value);
+  return name.length >= 2 && name.length <= 20 && /^[\p{L}\p{N}][\p{L}\p{N} ._'-]*$/u.test(name);
+}
+function romeWeekStart(now) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit", weekday: "short" }).formatToParts(now);
+  const get = (type) => parts.find((p) => p.type === type)?.value ?? "";
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const sinceMonday = (days.indexOf(get("weekday")) + 6) % 7;
+  const wall = Date.UTC(Number(get("year")), Number(get("month")) - 1, Number(get("day")) - sinceMonday);
+  const probe = new Date(wall);
+  const rome = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(probe);
+  const val = (type) => Number(rome.find((p) => p.type === type)?.value ?? 0);
+  const represented = Date.UTC(val("year"), val("month") - 1, val("day"), val("hour"), val("minute"), val("second"));
+  const offset = represented - probe.getTime();
+  return new Date(wall - offset);
+}
+
+// server/game-router.ts
+var COOKIE = "ga_tower_id";
+var COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+function cookieIdentity(ctx) {
+  const cookies = ctx.req.headers.get("cookie") ?? "";
+  const match2 = cookies.split(/;\s*/).find((v) => v.startsWith(COOKIE + "="));
+  const id = match2 ? decodeURIComponent(match2.slice(COOKIE.length + 1)) : "";
+  return /^[0-9a-f-]{36}$/i.test(id) ? id : null;
+}
+async function ensureIdentity(ctx) {
+  let id = cookieIdentity(ctx);
+  const db = getDb();
+  if (id) {
+    const rows = await db.select({ id: gameIdentities.id }).from(gameIdentities).where(eq(gameIdentities.id, id)).limit(1);
+    if (rows.length) return id;
+  }
+  id = randomUUID();
+  await db.insert(gameIdentities).values({ id });
+  ctx.resHeaders.append("Set-Cookie", `${COOKIE}=${id}; Path=/; Max-Age=${COOKIE_MAX_AGE}; HttpOnly; Secure; SameSite=Lax`);
+  return id;
+}
+function bestRuns(rows) {
+  const best = /* @__PURE__ */ new Map();
+  for (const row of rows) {
+    const old = best.get(row.identityId);
+    if (!old || row.score > old.score || row.score === old.score && (row.perfects > old.perfects || row.perfects === old.perfects && row.createdAt < old.createdAt)) best.set(row.identityId, row);
+  }
+  return [...best.values()].sort((a, b2) => b2.score - a.score || b2.perfects - a.perfects || a.createdAt.getTime() - b2.createdAt.getTime());
+}
+async function leaderboard(scope, identityId) {
+  const db = getDb();
+  const rows = scope === "week" ? await db.select().from(gameRuns).where(gte(gameRuns.createdAt, romeWeekStart(/* @__PURE__ */ new Date()))) : await db.select().from(gameRuns);
+  const ranked = bestRuns(rows);
+  const top = ranked.slice(0, 20).map((r, i) => ({ rank: i + 1, nickname: r.nickname, score: r.score, perfects: r.perfects, achievedAt: r.createdAt, mine: r.identityId === identityId }));
+  const index2 = identityId ? ranked.findIndex((r) => r.identityId === identityId) : -1;
+  const mine = index2 >= 0 ? { rank: index2 + 1, nickname: ranked[index2].nickname, score: ranked[index2].score, perfects: ranked[index2].perfects, achievedAt: ranked[index2].createdAt, mine: true } : null;
+  return { scope, top, mine, weekStart: romeWeekStart(/* @__PURE__ */ new Date()) };
+}
+var commandSchema = external_exports.object({ tick: external_exports.number().int().positive() });
+var submitSchema = external_exports.object({
+  sessionId: external_exports.string().uuid(),
+  nickname: external_exports.string().min(1).max(80),
+  commands: external_exports.array(commandSchema).max(1e3),
+  ended: external_exports.literal(true)
+});
+var gameRouter = createRouter({
+  champion: publicQuery.query(async () => {
+    const rows = await getDb().select().from(gameRuns).orderBy(desc(gameRuns.createdAt));
+    return bestRuns(rows)[0] ? (({ nickname, score, perfects, createdAt }) => ({ nickname, score, perfects, achievedAt: createdAt }))(bestRuns(rows)[0]) : null;
+  }),
+  leaderboard: publicQuery.input(external_exports.object({ scope: external_exports.enum(["all", "week"]) })).query(({ ctx, input }) => leaderboard(input.scope, cookieIdentity(ctx))),
+  startSession: publicQuery.mutation(async ({ ctx }) => {
+    const identityId = await ensureIdentity(ctx);
+    const db = getDb();
+    const recent = await db.select({ count: sql`count(*)` }).from(gameSessions).where(and(eq(gameSessions.identityId, identityId), gte(gameSessions.createdAt, new Date(Date.now() - 6e4))));
+    if (Number(recent[0]?.count ?? 0) >= 8) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Troppe partite in pochi secondi. Attendi un minuto e riprova." });
+    const id = randomUUID();
+    await db.insert(gameSessions).values({ id, identityId, configVersion: TOWER_CONFIG_VERSION, expiresAt: new Date(Date.now() + 30 * 6e4) });
+    return { sessionId: id, configVersion: TOWER_CONFIG_VERSION };
+  }),
+  submitRun: publicQuery.input(submitSchema).mutation(async ({ ctx, input }) => {
+    const identityId = await ensureIdentity(ctx);
+    const nickname = normalizeNickname(input.nickname);
+    if (!validNickname(nickname)) throw new TRPCError({ code: "BAD_REQUEST", message: "Usa da 2 a 20 caratteri: lettere, numeri, spazi, apostrofi, punti, trattini o _." });
+    const db = getDb();
+    const existing = await db.select().from(gameRuns).where(eq(gameRuns.sessionId, input.sessionId)).limit(1);
+    if (existing.length) {
+      if (existing[0].identityId !== identityId) throw new TRPCError({ code: "FORBIDDEN" });
+      return { saved: true, duplicate: true, runId: existing[0].id, score: existing[0].score, perfects: existing[0].perfects, newAbsoluteRecord: false };
+    }
+    const sessions = await db.select().from(gameSessions).where(eq(gameSessions.id, input.sessionId)).limit(1);
+    const session = sessions[0];
+    if (!session || session.identityId !== identityId) throw new TRPCError({ code: "FORBIDDEN", message: "Sessione non valida." });
+    if (session.expiresAt < /* @__PURE__ */ new Date()) throw new TRPCError({ code: "BAD_REQUEST", message: "La sessione \xE8 scaduta. Gioca una nuova partita." });
+    if (session.configVersion !== TOWER_CONFIG_VERSION) throw new TRPCError({ code: "BAD_REQUEST", message: "La configurazione della partita non \xE8 pi\xF9 valida." });
+    const recent = await db.select({ count: sql`count(*)` }).from(gameRuns).where(and(eq(gameRuns.identityId, identityId), gte(gameRuns.createdAt, new Date(Date.now() - 60 * 6e4))));
+    if (Number(recent[0]?.count ?? 0) >= 30) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Limite di salvataggi raggiunto. Riprova pi\xF9 tardi." });
+    let replayed;
+    try {
+      replayed = replayTower(input.commands);
+    } catch (error48) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: error48 instanceof Error ? error48.message : "Partita non valida" });
+    }
+    if (!replayed.state.over || replayed.state.score < 1) throw new TRPCError({ code: "BAD_REQUEST", message: "La partita deve terminare dopo almeno un piano." });
+    const before = bestRuns(await db.select().from(gameRuns))[0];
+    const runId = randomUUID();
+    try {
+      await db.insert(gameRuns).values({ id: runId, sessionId: input.sessionId, identityId, nickname, score: replayed.state.score, perfects: replayed.state.perfects, ticks: replayed.state.tick, configVersion: session.configVersion });
+    } catch (error48) {
+      const duplicate = await db.select().from(gameRuns).where(eq(gameRuns.sessionId, input.sessionId)).limit(1);
+      if (!duplicate.length || duplicate[0].identityId !== identityId) throw error48;
+      return { saved: true, duplicate: true, runId: duplicate[0].id, score: duplicate[0].score, perfects: duplicate[0].perfects, newAbsoluteRecord: false };
+    }
+    const isRecord = !before || replayed.state.score > before.score || replayed.state.score === before.score && replayed.state.perfects > before.perfects;
+    return { saved: true, duplicate: false, runId, score: replayed.state.score, perfects: replayed.state.perfects, newAbsoluteRecord: isRecord };
+  })
+});
+
 // server/router.ts
 var appRouter = createRouter({
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
   auth: authRouter,
-  content: contentRouter
+  content: contentRouter,
+  game: gameRouter
   // TODO: add feature routers here, e.g.
   // todo: createRouter({
   //   list: publicQuery.query(() => findTodos()),
@@ -31674,7 +32030,7 @@ var appRouter = createRouter({
 });
 
 // server/auth.ts
-var cookie2 = __toESM(require_dist());
+var cookie2 = __toESM(require_dist(), 1);
 
 // contracts/errors.ts
 function appError(status, message2) {
