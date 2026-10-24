@@ -35,4 +35,4 @@ export interface TemaContent {
 }
 
 export type Lang = "it" | "en" | "es" | "pt";
-export type Page = "home" | "eventi" | "innario" | "versetto" | "tema" | "profilo" | "admin" | "attivita" | "preghiere";
+export type Page = "home" | "eventi" | "innario" | "versetto" | "tema" | "profilo" | "admin" | "attivita" | "preghiere" | "giochi";
