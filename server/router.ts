@@ -1,11 +1,13 @@
 import { authRouter } from "./auth-router";
 import { contentRouter } from "./content-router";
+import { gameRouter } from "./game-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
   auth: authRouter,
   content: contentRouter,
+  game: gameRouter,
 
   // TODO: add feature routers here, e.g.
   // todo: createRouter({
