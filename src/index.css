@@ -113,13 +113,13 @@ svg { display: block; }
 .hero .ctas { display: flex; gap: var(--space-3); margin-top: var(--space-4); flex-wrap: wrap; }
 
 /* ==================== HOME: LOCANDINA ==================== */
-.poster-scroll-cue { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 64px; min-height: 56px; margin: 8px auto -4px; padding: 4px 16px 0; border: none; background: none; color: var(--color-primary); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.poster-scroll-cue { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 64px; min-height: 56px; margin: 8px auto -4px; padding: 4px 16px 0; border: none; background: none; color: var(--color-primary); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 .poster-scroll-cue span { font-family: var(--font-hand); font-size: 1.35rem; font-weight: 600; line-height: 1; }
 .poster-scroll-cue svg { animation: poster-cue-bounce 1.6s ease-in-out infinite; }
 .poster-scroll-cue:hover { color: var(--color-primary-dark); }
 .poster-scroll-cue:active { transform: scale(.94); }
 .poster-scroll-cue + .posterscroll { scroll-margin-top: 84px; }
-@keyframes poster-cue-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+@keyframes poster-cue-bounce { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(4px); } }
 @media (prefers-reduced-motion: reduce) { .poster-scroll-cue svg { animation: none; } }
 .postercard { border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-md); margin: var(--space-4) auto 0; background: var(--color-surface); max-width: 420px; }
 .postercard img { display: block; width: 100%; height: auto; }
