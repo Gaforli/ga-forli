@@ -19,8 +19,8 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
   const upcoming = upcomingEvents(events).slice(0, 5);
   const verse = VERSES[dayOfYear() % VERSES.length];
   const [liked, setLiked] = useState(false);
-  const posterQuery = trpc.content.getPoster.useQuery();
-  const poster = posterQuery.data?.image;
+  const postersQuery = trpc.content.getPosters.useQuery();
+  const posters = postersQuery.data?.images ?? [];
 
   return (
     <>
@@ -38,12 +38,16 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
         </div>
       </div>
 
-      {posterQuery.isLoading && (
+      {postersQuery.isLoading && (
         <div className="postercard" aria-hidden="true"><div className="sk" style={{ height: 300 }} /></div>
       )}
-      {!posterQuery.isLoading && poster && (
-        <div className="postercard">
-          <img src={poster} alt="Locandina degli appuntamenti del mese del gruppo GA Forlì" />
+      {!postersQuery.isLoading && posters.length > 0 && (
+        <div className="posterscroll">
+          {posters.map((img, i) => (
+            <div className="postercard" key={i}>
+              <img src={img} alt={`Locandina ${i + 1} del gruppo GA Forlì`} />
+            </div>
+          ))}
         </div>
       )}
 
