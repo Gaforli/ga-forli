@@ -31529,6 +31529,8 @@ async function upsertUser(data) {
 
 // server/local-auth.ts
 import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
+var configuredAccount = null;
+var configuredKey = "";
 function scryptAsync(password, salt) {
   return new Promise((resolve, reject) => {
     scrypt(
@@ -31538,6 +31540,11 @@ function scryptAsync(password, salt) {
       (err, key) => err ? reject(err) : resolve(key.toString("hex"))
     );
   });
+}
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const hash2 = await scryptAsync(password, salt);
+  return `${salt}:${hash2}`;
 }
 async function verifyPassword(password, stored) {
   const [salt, hash2] = stored.split(":");
@@ -31552,12 +31559,46 @@ async function findAdminByEmail(email3) {
   const rows = await db.select().from(adminAccounts).where(eq(adminAccounts.email, email3));
   return rows[0] ?? null;
 }
+async function findConfiguredAdmin(email3) {
+  const configuredEmail = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD ?? "";
+  const name = (process.env.ADMIN_NAME ?? "").trim() || "Direttore GA";
+  if (!configuredEmail && !password) return findAdminByEmail(email3);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configuredEmail) || password.length < 8 || password === "xxx") return null;
+  if (configuredEmail !== email3) return null;
+  const key = `${configuredEmail}\0${password}\0${name}`;
+  if (!configuredAccount || configuredKey !== key) {
+    configuredKey = key;
+    configuredAccount = (async () => {
+      const existing = await findAdminByEmail(configuredEmail);
+      if (existing && await verifyPassword(password, existing.passwordHash)) {
+        if (existing.name === name) return existing;
+        await getDb().update(adminAccounts).set({ name }).where(eq(adminAccounts.email, configuredEmail));
+        return { ...existing, name };
+      }
+      const passwordHash = await hashPassword(password);
+      if (existing) {
+        await getDb().update(adminAccounts).set({ passwordHash, name }).where(eq(adminAccounts.email, configuredEmail));
+      } else {
+        await getDb().insert(adminAccounts).values({ email: configuredEmail, passwordHash, name });
+      }
+      const account = await findAdminByEmail(configuredEmail);
+      if (!account) throw new Error("Configurazione amministratore non riuscita");
+      return account;
+    })().catch((error48) => {
+      configuredAccount = null;
+      configuredKey = "";
+      throw error48;
+    });
+  }
+  return configuredAccount;
+}
 
 // server/auth-router.ts
 var authRouter = createRouter({
   me: authedQuery.query((opts) => opts.ctx.user),
   loginLocal: publicQuery.input(external_exports.object({ email: external_exports.string().email(), password: external_exports.string().min(1) })).mutation(async ({ ctx, input }) => {
-    const account = await findAdminByEmail(input.email.trim().toLowerCase());
+    const account = await findConfiguredAdmin(input.email.trim().toLowerCase());
     if (!account || !await verifyPassword(input.password, account.passwordHash)) {
       return { ok: false };
     }
