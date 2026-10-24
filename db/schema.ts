@@ -6,6 +6,8 @@ import {
   varchar,
   text,
   timestamp,
+  index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
@@ -83,3 +85,37 @@ export const prayerRequests = pgTable("prayer_requests", {
 });
 
 export type PrayerRequest = typeof prayerRequests.$inferSelect;
+
+export const gameIdentities = pgTable("game_identities", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+});
+
+export const gameSessions = pgTable("game_sessions", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  identityId: varchar("identity_id", { length: 36 }).notNull(),
+  configVersion: integer("config_version").notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { mode: "date", withTimezone: true }).notNull(),
+}, (table) => [
+  index("game_sessions_identity_created_idx").on(table.identityId, table.createdAt),
+]);
+
+export const gameRuns = pgTable("game_runs", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  sessionId: varchar("session_id", { length: 36 }).notNull(),
+  identityId: varchar("identity_id", { length: 36 }).notNull(),
+  nickname: varchar("nickname", { length: 20 }).notNull(),
+  score: integer("score").notNull(),
+  perfects: integer("perfects").notNull(),
+  ticks: integer("ticks").notNull(),
+  configVersion: integer("config_version").notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("game_runs_session_unique").on(table.sessionId),
+  index("game_runs_identity_idx").on(table.identityId),
+  index("game_runs_created_idx").on(table.createdAt),
+  index("game_runs_rank_idx").on(table.score, table.perfects, table.createdAt),
+]);
+
+export type GameRun = typeof gameRuns.$inferSelect;
