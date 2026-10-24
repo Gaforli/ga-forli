@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { trpc } from "@/providers/trpc";
 import { CATS, EVENT_IMG, VERSES } from "@/i18n";
@@ -21,6 +21,7 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
   const [liked, setLiked] = useState(false);
   const postersQuery = trpc.content.getPosters.useQuery();
   const posters = postersQuery.data?.images ?? [];
+  const postersRef = useRef<HTMLDivElement>(null);
   const championQuery = trpc.game.champion.useQuery();
   const champion = championQuery.data;
 
@@ -44,13 +45,27 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
         <div className="postercard" aria-hidden="true"><div className="sk" style={{ height: 300 }} /></div>
       )}
       {!postersQuery.isLoading && posters.length > 0 && (
-        <div className="posterscroll">
-          {posters.map((img, i) => (
-            <div className="postercard" key={i}>
-              <img src={img} alt={`Locandina ${i + 1} del gruppo GA Forlì`} />
-            </div>
-          ))}
-        </div>
+        <>
+          <button
+            type="button"
+            className="poster-scroll-cue"
+            onClick={() => postersRef.current?.scrollIntoView({
+              behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+              block: "start",
+            })}
+            aria-label="Scorri per vedere le locandine"
+          >
+            <span>scorri</span>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v15m-6-6 6 6 6-6" /></svg>
+          </button>
+          <div className="posterscroll" ref={postersRef}>
+            {posters.map((img, i) => (
+              <div className="postercard" key={i}>
+                <img src={img} alt={`Locandina ${i + 1} del gruppo GA Forlì`} />
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       <section className="gamehome" aria-labelledby="gamehome-title">
