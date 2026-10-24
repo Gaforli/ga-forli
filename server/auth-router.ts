@@ -6,14 +6,14 @@ import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { signSessionToken } from "./session";
 import { env } from "./lib/env";
 import { upsertUser } from "./queries/users";
-import { findAdminByEmail, verifyPassword } from "./local-auth";
+import { findConfiguredAdmin, verifyPassword } from "./local-auth";
 
 export const authRouter = createRouter({
   me: authedQuery.query((opts) => opts.ctx.user),
   loginLocal: publicQuery
     .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const account = await findAdminByEmail(input.email.trim().toLowerCase());
+      const account = await findConfiguredAdmin(input.email.trim().toLowerCase());
       if (!account || !(await verifyPassword(input.password, account.passwordHash))) {
         return { ok: false as const };
       }
