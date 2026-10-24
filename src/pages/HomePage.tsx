@@ -21,6 +21,8 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
   const [liked, setLiked] = useState(false);
   const postersQuery = trpc.content.getPosters.useQuery();
   const posters = postersQuery.data?.images ?? [];
+  const championQuery = trpc.game.champion.useQuery();
+  const champion = championQuery.data;
 
   return (
     <>
@@ -50,6 +52,14 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
           ))}
         </div>
       )}
+
+      <section className="gamehome" aria-labelledby="gamehome-title">
+        <span className="gamehome-kicker">TORRE DI BABELE · IL GIOCO 3D</span>
+        <h3 id="gamehome-title">Batti il record della GA</h3>
+        <p>Un blocco alla volta, costruisci la torre più alta. Precisione, pazienza e un pizzico di sfida.</p>
+        <p className="gamehome-champion">{champion ? <>Campione attuale: <b>{champion.nickname}</b> · {champion.score} piani</> : <><b>Il primo record è ancora da conquistare.</b></>}</p>
+        <button onClick={() => goPage("giochi")}>Gioca ora <span aria-hidden="true">→</span></button>
+      </section>
 
       <div className="sechead">
         <h3>{t("h_upcoming")}</h3>

@@ -15,7 +15,7 @@ interface Prayer {
   color: string;
 }
 
-const POSTIT_COLORS = ["#FFF3B8", "#DDE8C8", "#FFD9CF", "#FFE9B0", "#E3F0DA", "#FADCD5"];
+const POSTIT_COLORS = ["#FFF3B8", "#DDE8C8", "#FFD9CF", "#FFE9B0", "#E3F0DA", "#FADCD5"] as const;
 const POSTIT_TILTS = ["-1.8deg", "1.4deg", "-1.2deg", "1.8deg", "-1.5deg", "1.1deg"];
 const PIN_COLORS = ["#4C8C6B", "#C9A227", "#C4605C", "#7A8794", "#2F5D47", "#B5651D"];
 const PRAYED_KEY = "ga_prayed";
@@ -57,7 +57,7 @@ export default function PreghierePage({ t, lang }: Props) {
   const [prBody, setPrBody] = useState("");
   const [prName, setPrName] = useState("");
   const [prAnonymous, setPrAnonymous] = useState(false);
-  const [prColor, setPrColor] = useState(POSTIT_COLORS[0]);
+  const [prColor, setPrColor] = useState<(typeof POSTIT_COLORS)[number]>(POSTIT_COLORS[0]);
   const [prDone, setPrDone] = useState(false);
   const [prErr, setPrErr] = useState<string | null>(null);
 
@@ -105,7 +105,7 @@ export default function PreghierePage({ t, lang }: Props) {
               key={p.id}
               style={{
                 ["--tilt" as string]: POSTIT_TILTS[i % POSTIT_TILTS.length],
-                background: POSTIT_COLORS.includes(p.color) ? p.color : POSTIT_COLORS[i % POSTIT_COLORS.length],
+                background: POSTIT_COLORS.find((color) => color === p.color) ?? POSTIT_COLORS[i % POSTIT_COLORS.length],
               }}
               onClick={() => setOpenId(p.id)}
             >
