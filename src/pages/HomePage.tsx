@@ -56,7 +56,7 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
             aria-label="Scorri per vedere le locandine"
           >
             <span>scorri</span>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v15m-6-6 6 6 6-6" /></svg>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg>
           </button>
           <div className="posterscroll" ref={postersRef}>
             {posters.map((img, i) => (
