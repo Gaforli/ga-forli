@@ -19,10 +19,23 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
   const eventsQuery = trpc.content.listEvents.useQuery();
   const events = eventsQuery.data ?? [];
   const upcoming = upcomingEvents(events).slice(0, 5);
+  const postersQuery = trpc.content.getPosters.useQuery();
+  const posters = postersQuery.data?.images ?? [];
   const verse = VERSES[dayOfYear() % VERSES.length];
   const [liked, setLiked] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<AppEvent | null>(null);
+  const homePostersRef = useRef<HTMLDivElement>(null);
   const postersRef = useRef<HTMLDivElement>(null);
+
+  const scrollCarousel = (ref: React.RefObject<HTMLDivElement | null>) => {
+    const scroller = ref.current;
+    if (!scroller) return;
+    const atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 8;
+    scroller.scrollTo({
+      left: atEnd ? 0 : scroller.scrollLeft + scroller.clientWidth * 0.85,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  };
   const championQuery = trpc.game.champion.useQuery();
   const champion = championQuery.data;
 
@@ -42,6 +55,30 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
         </div>
       </div>
 
+      {postersQuery.isLoading && (
+        <div className="postercard" aria-hidden="true"><div className="sk" style={{ height: 300 }} /></div>
+      )}
+      {!postersQuery.isLoading && posters.length > 0 && (
+        <section aria-label={t("adm_posters")}>
+          <button
+            type="button"
+            className="poster-scroll-cue"
+            onClick={() => scrollCarousel(homePostersRef)}
+            aria-label={t("home_scroll_posters")}
+          >
+            <span>{t("home_scroll_posters")}</span>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg>
+          </button>
+          <div className="posterscroll" ref={homePostersRef}>
+            {posters.map((img, i) => (
+              <div className="postercard" key={i}>
+                <img src={img} alt={`Locandina ${i + 1} del gruppo GA Forlì`} loading="lazy" draggable={false} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="sechead home-events-head">
         <h3>{t("h_upcoming")}</h3>
         <button className="all" onClick={() => goPage("eventi")}><span>{t("see_all")}</span> ›</button>
@@ -54,15 +91,7 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
           <button
             type="button"
             className="poster-scroll-cue"
-            onClick={() => {
-              const scroller = postersRef.current;
-              if (!scroller) return;
-              const atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 8;
-              scroller.scrollTo({
-                left: atEnd ? 0 : scroller.scrollLeft + scroller.clientWidth * 0.85,
-                behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-              });
-            }}
+            onClick={() => scrollCarousel(postersRef)}
             aria-label={t("home_scroll_events")}
           >
             <span>{t("home_scroll_events")}</span>

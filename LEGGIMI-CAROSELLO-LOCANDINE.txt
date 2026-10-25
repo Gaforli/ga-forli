@@ -1,0 +1,73 @@
+============================================================
+GA FORLÌ — PACCHETTO "CAROSELLO LOCANDINE IN HOME"
+(cumulativo: include anche l'Archivio Locandine)
+============================================================
+
+COSA C'È DI NUOVO IN QUESTO PACCHETTO
+------------------------------------------------------------
+1. HOME — DUE CAROSELLI
+   • Subito dopo la sezione iniziale (hero) compare il carosello
+     LOCANDINE: mostra le immagini che il Direttore GA carica
+     dal pannello, nell'ordine scelto da lui.
+   • Sotto, come prima, il carosello PROSSIMI EVENTI.
+   • Ogni carosello ha il suo indicatore:
+       - "scorri per vedere le altre locandine" (sopra)
+       - "scorri per i prossimi eventi" (sotto)
+   • Toccando l'indicatore il carosello scorre da solo.
+   • Le locandine del carosello sono immagini complete, caricate
+     apposta: NON sono più legate agli eventi. Negli eventi si
+     possono usare immagini diverse, più riassuntive.
+
+2. AREA DIRETTORE GA — NUOVA SCHEDA "LOCANDINE"
+   • Carica una o più immagini (JPG/PNG dal telefono o dal PC:
+     vengono compresse automaticamente dal sito).
+   • Riordina la lista con le frecce ↑ ↓.
+   • Elimina una locandina con il cestino 🗑.
+   • "Salva locandine" pubblica la lista in Home.
+   • Se la lista è vuota, in Home il carosello locandine non
+     compare proprio (nessuno spazio vuoto).
+
+3. INCLUDE TUTTO IL LAVORO PRECEDENTE
+   • Archivio Locandine mese per mese (scheda "Archivio" nel
+     pannello + sezione pubblica).
+   • Dettaglio evento con locandina grande e descrizione.
+   • Nessuna ridondanza: le due cose ora usano immagini diverse.
+
+COSA DEVI FARE TU
+------------------------------------------------------------
+PASSO 1 — GITHUB
+   Carica il contenuto di questo pacchetto nella cartella del
+   repository (sovrascrivi i file esistenti) e fai push.
+   Vercel farà il deploy da solo appena vede il push.
+
+PASSO 2 — DATABASE: NESSUNA NUOVA MIGRAZIONE
+   Se hai già eseguito su Supabase le migrazioni che ti ho dato
+   la volta scorsa (0003_eventi_immagine_text e
+   0004_archivio_locandine), NON devi toccare il database:
+   questo aggiornamento non richiede altre modifiche SQL.
+   Le migrazioni restano nella cartella db/migrations solo per
+   memoria: NON rieseguirle.
+
+PASSO 3 — PULIZIA (facoltativa)
+   Nel repository puoi cancellare i vecchi file
+   LEGGIMI-MODIFICA-EVENTI.txt e LEGGIMI-ARCHIVIO-LOCANDINE.txt:
+   questo LEGGIMI li sostituisce.
+
+REGOLE DI SICUREZZA (SEMPRE VALIDE)
+------------------------------------------------------------
+• NON caricare mai il file .env: resta escluso dal .gitignore.
+  Le chiavi e la password del Direttore restano solo su Vercel
+  (Environment Variables) e nel file .env in locale.
+• Non incollare mai chiavi service_role o password del database
+  nel codice o nel repository.
+• Le migrazioni già applicate NON vanno rieseguite.
+
+SE QUALCOSA NON VA DOPO IL PUSH
+------------------------------------------------------------
+• Controlla su Vercel che il deploy sia "Ready".
+• Svuota la cache del telefono (o apri in incognito) se la Home
+  sembra vecchia.
+• Se il carosello locandine non compare, è normale finché il
+  Direttore non carica almeno una locandina dalla scheda
+  "Locandine" e preme "Salva locandine".
+============================================================

@@ -30,12 +30,13 @@ interface Props {
 export default function AdminPage({ t, lang, goPage }: Props) {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const isAdmin = isAuthenticated && user?.role === "admin";
-  const [tab, setTab] = useState<"ev" | "tema" | "archive" | "monthly" | "prayers">("ev");
+  const [tab, setTab] = useState<"ev" | "tema" | "posters" | "archive" | "monthly" | "prayers">("ev");
 
   const utils = trpc.useUtils();
   const eventsQuery = trpc.content.listEvents.useQuery(undefined, { enabled: isAdmin });
   const temaQuery = trpc.content.getTema.useQuery(undefined, { enabled: isAdmin });
   const archiveQuery = trpc.content.listPosterArchive.useQuery(undefined, { enabled: isAdmin });
+  const postersQuery = trpc.content.getPosters.useQuery(undefined, { enabled: isAdmin });
   const monthlyQuery = trpc.content.getMonthly.useQuery(undefined, { enabled: isAdmin });
   const pendingPrayersQuery = trpc.content.listPendingPrayers.useQuery(undefined, { enabled: isAdmin });
   const prayersQuery = trpc.content.listPrayers.useQuery(undefined, { enabled: isAdmin });
@@ -113,6 +114,68 @@ export default function AdminPage({ t, lang, goPage }: Props) {
     }
     setArchiveMsg(null);
     archivePoster.mutate({ eventId: archiveEventId, month: archiveMonth });
+  };
+
+  // ── Locandine home (multiple, carosello sopra i Prossimi eventi) ──
+  const [postersList, setPostersList] = useState<string[]>([]);
+  const [postersLoaded, setPostersLoaded] = useState(false);
+  const [postersMsg, setPostersMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [posterNewImg, setPosterNewImg] = useState<string | null>(null);
+  const [posterNewLoading, setPosterNewLoading] = useState(false);
+
+  useEffect(() => {
+    if (postersQuery.data && !postersLoaded) {
+      setPostersList(postersQuery.data.images);
+      setPostersLoaded(true);
+    }
+  }, [postersQuery.data, postersLoaded]);
+
+  const savePosters = trpc.content.savePosters.useMutation({
+    onSuccess: () => {
+      utils.content.getPosters.invalidate();
+      setPostersMsg({ text: t("adm_pdone"), ok: true });
+      setTimeout(() => setPostersMsg(null), 3000);
+    },
+    onError: () => setPostersMsg({ text: t("adm_perr"), ok: false }),
+  });
+
+  const pickNewPoster = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setPosterNewLoading(true);
+    setPostersMsg(null);
+    try {
+      setPosterNewImg(await fileToPosterDataUrl(file));
+    } catch {
+      setPostersMsg({ text: t("adm_perr"), ok: false });
+    } finally {
+      setPosterNewLoading(false);
+    }
+  };
+
+  const addPoster = () => {
+    if (!posterNewImg) return;
+    setPostersList((prev) => [...prev, posterNewImg]);
+    setPosterNewImg(null);
+  };
+
+  const movePoster = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= postersList.length) return;
+    setPostersList((prev) => {
+      const arr = [...prev];
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      return arr;
+    });
+  };
+
+  const removePoster = (i: number) => {
+    setPostersList((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const submitPosters = () => {
+    savePosters.mutate({ images: postersList });
   };
 
   // ── Locandina mensile ──
@@ -377,6 +440,7 @@ export default function AdminPage({ t, lang, goPage }: Props) {
       <div className="admintabs">
         <button className={tab === "ev" ? "on" : ""} onClick={() => setTab("ev")}>{t("adm_events")}</button>
         <button className={tab === "tema" ? "on" : ""} onClick={() => setTab("tema")}>{t("adm_theme")}</button>
+        <button className={tab === "posters" ? "on" : ""} onClick={() => setTab("posters")}>{t("adm_posters")}</button>
         <button className={tab === "archive" ? "on" : ""} onClick={() => setTab("archive")}>{t("adm_archive")}</button>
         <button className={tab === "monthly" ? "on" : ""} onClick={() => setTab("monthly")}>{t("adm_monthly")}</button>
         <button className={tab === "prayers" ? "on" : ""} onClick={() => setTab("prayers")}>
@@ -481,6 +545,50 @@ export default function AdminPage({ t, lang, goPage }: Props) {
             {t("adm_savet")}
           </button>
           {temaMsg && <span className="savedmsg">{temaMsg}</span>}
+        </div>
+      )}
+
+      {tab === "posters" && (
+        <div className="formcard">
+          <h4>{t("adm_posters")}</h4>
+          <p className="sub" style={{ marginBottom: 14 }}>{t("adm_posters_d")}</p>
+
+          {postersList.length === 0 && (
+            <p className="noevents" style={{ textAlign: "left", padding: "4px 0 14px" }}>{t("adm_posters_none")}</p>
+          )}
+          {postersList.map((img, i) => (
+            <div className="admposter" key={i}>
+              <div className="postercard" style={{ margin: 0, flex: "0 0 80px", maxWidth: 80 }}>
+                <img src={img} alt={`Locandina ${i + 1}`} />
+              </div>
+              <div className="admposter-actions">
+                <span className="admposter-num">{i + 1}</span>
+                <button className="logoutbtn" style={{ padding: "6px 12px", fontSize: 14 }} onClick={() => movePoster(i, -1)} disabled={i === 0} aria-label="Sposta su">↑</button>
+                <button className="logoutbtn" style={{ padding: "6px 12px", fontSize: 14 }} onClick={() => movePoster(i, 1)} disabled={i === postersList.length - 1} aria-label="Sposta giù">↓</button>
+                <button className="logoutbtn" style={{ padding: "6px 12px", fontSize: 14, borderColor: "var(--color-danger)", color: "var(--color-danger)" }} onClick={() => removePoster(i)} aria-label={t("adm_del")}>🗑</button>
+              </div>
+            </div>
+          ))}
+
+          <label className="flabel" htmlFor="posterFile" style={{ marginTop: 16 }}>{t("adm_poster_new")}</label>
+          <input className="finput" id="posterFile" type="file" accept="image/*" onChange={pickNewPoster} disabled={posterNewLoading} />
+          {posterNewLoading && <p className="sub" style={{ margin: "4px 0 10px", fontSize: ".85rem" }}>{t("adm_loading")}</p>}
+          {posterNewImg && (
+            <>
+              <span className="flabel" style={{ marginTop: 14 }}>{t("adm_poster_prev")}</span>
+              <div className="postercard" style={{ margin: "6px 0 14px" }}>
+                <img src={posterNewImg} alt={t("adm_poster_prev")} />
+              </div>
+              <button className="savebtn" onClick={addPoster}>{t("adm_poster_add")}</button>
+            </>
+          )}
+
+          {postersList.length > 0 && (
+            <button className="savebtn" style={{ marginTop: 16 }} onClick={submitPosters} disabled={savePosters.isPending}>
+              {t("adm_posters_save")}
+            </button>
+          )}
+          {postersMsg && <span className="savedmsg" style={postersMsg.ok ? {} : { color: "var(--color-danger)" }}>{postersMsg.text}</span>}
         </div>
       )}
 
