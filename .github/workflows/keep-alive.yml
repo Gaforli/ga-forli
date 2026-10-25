@@ -14,5 +14,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping health endpoint
-        # ⚠️ Sostituisci con l'URL reale del sito su Vercel
         run: curl -fsS "https://gaforli.vercel.app/api/health"

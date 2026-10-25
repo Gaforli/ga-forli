@@ -1,0 +1,18 @@
+ASSET GRAFICI — TORRE DI BABELE
+
+Sandstone Cracks — Poly Haven
+Autori e informazioni: https://polyhaven.com/a/sandstone_cracks
+File utilizzati: Diffuse, Normal OpenGL, Ambient Occlusion e Roughness, 1K.
+Le mappe AO e Roughness sono state unite in un'unica immagine ottimizzata.
+Licenza: CC0 / pubblico dominio.
+
+Qwantani Sunset — Poly Haven
+Autori: Greg Zaal (fotografia), Jarod Guest (elaborazione).
+Informazioni: https://polyhaven.com/a/qwantani_sunset
+File utilizzato: HDRI 1K.
+Licenza: CC0 / pubblico dominio.
+
+Licenza degli asset Poly Haven: https://polyhaven.com/license
+Gli asset possono essere utilizzati, modificati e redistribuiti, anche a fini
+commerciali, senza obbligo di attribuzione. I crediti sono mantenuti per
+trasparenza e per ringraziare gli autori.

@@ -25624,6 +25624,7 @@ __export(schema_exports, {
   gameIdentities: () => gameIdentities,
   gameRuns: () => gameRuns,
   gameSessions: () => gameSessions,
+  posterArchive: () => posterArchive,
   prayerRequests: () => prayerRequests,
   roleEnum: () => roleEnum,
   siteContent: () => siteContent,
@@ -29142,6 +29143,22 @@ var events = pgTable("events", {
   image: text("image").default(""),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull()
 });
+var posterArchive = pgTable("poster_archive", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  archiveMonth: varchar("archive_month", { length: 7 }).notNull(),
+  eventDate: varchar("event_date", { length: 10 }).notNull(),
+  eventTime: varchar("event_time", { length: 5 }).default("").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  cat: eventCatEnum("cat").notNull(),
+  desc: text("desc"),
+  image: text("image").notNull(),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull().$onUpdate(() => /* @__PURE__ */ new Date())
+}, (table) => [
+  uniqueIndex("poster_archive_event_unique").on(table.eventId),
+  index("poster_archive_month_idx").on(table.archiveMonth)
+]);
 var siteContent = pgTable("site_content", {
   id: serial("id").primaryKey(),
   key: varchar("key", { length: 64 }).notNull().unique(),
@@ -31669,6 +31686,7 @@ var postersInput = external_exports.object({
 var monthlyInput = external_exports.object({
   image: external_exports.string().max(MAX_POSTER_CHARS)
 });
+var archiveMonthInput = external_exports.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Mese non valido");
 var POSTIT_COLORS = ["#FFF3B8", "#DDE8C8", "#FFD9CF", "#FFE9B0", "#E3F0DA", "#FADCD5"];
 var prayerInput = external_exports.object({
   title: external_exports.string().min(1, "Titolo obbligatorio").max(120),
@@ -31727,9 +31745,99 @@ var contentRouter = createRouter({
     });
     return { ok: true };
   }),
+  updateEvent: adminQuery.input(eventInput.extend({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
+    const db = getDb();
+    const { id, ...values2 } = input;
+    const existing = await db.select({ id: events.id }).from(events).where(eq(events.id, id)).limit(1);
+    if (!existing.length) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Evento non trovato" });
+    }
+    await db.update(events).set(values2).where(eq(events.id, id));
+    return { ok: true };
+  }),
   deleteEvent: adminQuery.input(external_exports.object({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
     const db = getDb();
     await db.delete(events).where(eq(events.id, input.id));
+    return { ok: true };
+  }),
+  // ── Archivio Locandine: copia storica collegata all'evento di origine ──
+  listPosterArchive: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(posterArchive).orderBy(
+      desc(posterArchive.archiveMonth),
+      desc(posterArchive.eventDate),
+      desc(posterArchive.eventTime),
+      desc(posterArchive.id)
+    );
+    return rows.map((r) => ({
+      id: Number(r.id),
+      eventId: Number(r.eventId),
+      archiveMonth: r.archiveMonth,
+      date: r.eventDate,
+      time: r.eventTime,
+      title: r.title,
+      cat: r.cat,
+      desc: r.desc ?? "",
+      image: r.image
+    }));
+  }),
+  archiveEventPoster: adminQuery.input(external_exports.object({
+    eventId: external_exports.number().int().positive(),
+    month: archiveMonthInput
+  })).mutation(async ({ input }) => {
+    const db = getDb();
+    const rows = await db.select().from(events).where(eq(events.id, input.eventId)).limit(1);
+    const event = rows[0];
+    if (!event) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Evento non trovato" });
+    }
+    if (!event.image) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Aggiungi prima una locandina personalizzata all'evento"
+      });
+    }
+    const values2 = {
+      eventId: Number(event.id),
+      archiveMonth: input.month,
+      eventDate: event.date,
+      eventTime: event.time,
+      title: event.title,
+      cat: event.cat,
+      desc: event.desc ?? "",
+      image: event.image,
+      updatedAt: /* @__PURE__ */ new Date()
+    };
+    await db.insert(posterArchive).values(values2).onConflictDoUpdate({
+      target: posterArchive.eventId,
+      set: {
+        archiveMonth: values2.archiveMonth,
+        eventDate: values2.eventDate,
+        eventTime: values2.eventTime,
+        title: values2.title,
+        cat: values2.cat,
+        desc: values2.desc,
+        image: values2.image,
+        updatedAt: values2.updatedAt
+      }
+    });
+    return { ok: true };
+  }),
+  moveArchivedPoster: adminQuery.input(external_exports.object({
+    id: external_exports.number().int().positive(),
+    month: archiveMonthInput
+  })).mutation(async ({ input }) => {
+    const db = getDb();
+    const existing = await db.select({ id: posterArchive.id }).from(posterArchive).where(eq(posterArchive.id, input.id)).limit(1);
+    if (!existing.length) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Locandina archiviata non trovata" });
+    }
+    await db.update(posterArchive).set({ archiveMonth: input.month, updatedAt: /* @__PURE__ */ new Date() }).where(eq(posterArchive.id, input.id));
+    return { ok: true };
+  }),
+  removeArchivedPoster: adminQuery.input(external_exports.object({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
+    const db = getDb();
+    await db.delete(posterArchive).where(eq(posterArchive.id, input.id));
     return { ok: true };
   }),
   getTema: publicQuery.query(async () => {

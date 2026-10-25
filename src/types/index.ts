@@ -28,6 +28,11 @@ export interface AppEvent {
   image?: string;
 }
 
+export interface ArchivedPoster extends AppEvent {
+  eventId: number;
+  archiveMonth: string;
+}
+
 export interface TemaContent {
   title: string;
   tag: string;
@@ -35,4 +40,4 @@ export interface TemaContent {
 }
 
 export type Lang = "it" | "en" | "es" | "pt";
-export type Page = "home" | "eventi" | "innario" | "versetto" | "tema" | "profilo" | "admin" | "attivita" | "preghiere" | "giochi";
+export type Page = "home" | "eventi" | "archivio" | "innario" | "versetto" | "tema" | "profilo" | "admin" | "attivita" | "preghiere" | "giochi";

@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { events, siteContent, prayerRequests } from "../db/schema";
+import { events, siteContent, prayerRequests, posterArchive } from "../db/schema";
 import { env } from "./lib/env";
 
 const TEMA_KEY = "tema";
@@ -44,6 +45,8 @@ const postersInput = z.object({
 const monthlyInput = z.object({
   image: z.string().max(MAX_POSTER_CHARS),
 });
+
+const archiveMonthInput = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Mese non valido");
 
 // ── Richieste di preghiera ──
 const POSTIT_COLORS = ["#FFF3B8", "#DDE8C8", "#FFD9CF", "#FFE9B0", "#E3F0DA", "#FADCD5"] as const;
@@ -104,11 +107,118 @@ export const contentRouter = createRouter({
     return { ok: true };
   }),
 
+  updateEvent: adminQuery
+    .input(eventInput.extend({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const { id, ...values } = input;
+      const existing = await db.select({ id: events.id }).from(events).where(eq(events.id, id)).limit(1);
+      if (!existing.length) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Evento non trovato" });
+      }
+      await db.update(events).set(values).where(eq(events.id, id));
+      return { ok: true };
+    }),
+
   deleteEvent: adminQuery
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const db = getDb();
       await db.delete(events).where(eq(events.id, input.id));
+      return { ok: true };
+    }),
+
+  // ── Archivio Locandine: copia storica collegata all'evento di origine ──
+  listPosterArchive: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(posterArchive).orderBy(
+      desc(posterArchive.archiveMonth),
+      desc(posterArchive.eventDate),
+      desc(posterArchive.eventTime),
+      desc(posterArchive.id),
+    );
+    return rows.map((r) => ({
+      id: Number(r.id),
+      eventId: Number(r.eventId),
+      archiveMonth: r.archiveMonth,
+      date: r.eventDate,
+      time: r.eventTime,
+      title: r.title,
+      cat: r.cat,
+      desc: r.desc ?? "",
+      image: r.image,
+    }));
+  }),
+
+  archiveEventPoster: adminQuery
+    .input(z.object({
+      eventId: z.number().int().positive(),
+      month: archiveMonthInput,
+    }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const rows = await db.select().from(events).where(eq(events.id, input.eventId)).limit(1);
+      const event = rows[0];
+      if (!event) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Evento non trovato" });
+      }
+      if (!event.image) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Aggiungi prima una locandina personalizzata all'evento",
+        });
+      }
+
+      const values = {
+        eventId: Number(event.id),
+        archiveMonth: input.month,
+        eventDate: event.date,
+        eventTime: event.time,
+        title: event.title,
+        cat: event.cat,
+        desc: event.desc ?? "",
+        image: event.image,
+        updatedAt: new Date(),
+      };
+      await db.insert(posterArchive).values(values).onConflictDoUpdate({
+        target: posterArchive.eventId,
+        set: {
+          archiveMonth: values.archiveMonth,
+          eventDate: values.eventDate,
+          eventTime: values.eventTime,
+          title: values.title,
+          cat: values.cat,
+          desc: values.desc,
+          image: values.image,
+          updatedAt: values.updatedAt,
+        },
+      });
+      return { ok: true };
+    }),
+
+  moveArchivedPoster: adminQuery
+    .input(z.object({
+      id: z.number().int().positive(),
+      month: archiveMonthInput,
+    }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const existing = await db.select({ id: posterArchive.id }).from(posterArchive)
+        .where(eq(posterArchive.id, input.id)).limit(1);
+      if (!existing.length) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Locandina archiviata non trovata" });
+      }
+      await db.update(posterArchive)
+        .set({ archiveMonth: input.month, updatedAt: new Date() })
+        .where(eq(posterArchive.id, input.id));
+      return { ok: true };
+    }),
+
+  removeArchivedPoster: adminQuery
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      await db.delete(posterArchive).where(eq(posterArchive.id, input.id));
       return { ok: true };
     }),
 

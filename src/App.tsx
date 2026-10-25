@@ -9,6 +9,7 @@ import TemaPage from "@/pages/TemaPage";
 import ProfiloPage from "@/pages/ProfiloPage";
 import AdminPage from "@/pages/AdminPage";
 import AttivitaPage from "@/pages/AttivitaPage";
+import ArchivioLocandinePage from "@/pages/ArchivioLocandinePage";
 import PreghierePage from "@/pages/PreghierePage";
 
 const GiochiPage = lazy(() => import("@/pages/GiochiPage"));
@@ -94,6 +95,7 @@ export default function App() {
           <button onClick={() => goPage("tema")}><span className="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2 5-5 2 2-5z" /></svg></span><span>{t("m_tema")}</span></button>
           <button onClick={() => goPage("versetto")}><span className="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 6.5C10.6 5 8.6 4.2 6 4.2c-1 0-1.9.1-2.5.4v13.6c.6-.3 1.5-.4 2.5-.4 2.6 0 4.6.8 6 2.3 1.4-1.5 3.4-2.3 6-2.3 1 0 1.9.1 2.5.4V4.6c-.6-.3-1.5-.4-2.5-.4-2.6 0-4.6.8-6 2.3z" /><path d="M12 6.5v13.6" /></svg></span><span>{t("m_verse")}</span></button>
           <button onClick={() => goPage("attivita")}><span className="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3" /><path d="M3 9h18M8 2v4M16 2v4" /></svg></span><span>{t("m_attivita")}</span></button>
+          <button onClick={() => goPage("archivio")}><span className="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7.5h16v13H4zM3 3.5h18v4H3z" /><path d="M9 12h6" /></svg></span><span>{t("m_archive")}</span></button>
           <button onClick={() => goPage("preghiere")}><span className="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v8M9.5 5.5 12 3l2.5 2.5" /><path d="M7 21c0-4 2-6 5-6s5 2 5 6" /><path d="M9 13c-1.5 1-2 2.5-2 4M15 13c1.5 1 2 2.5 2 4" /></svg></span><span>{t("m_pray")}</span></button>
           <button onClick={() => goPage("profilo")}><span className="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2" /><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5" /><path d="M16 5.5a3.2 3.2 0 0 1 0 6M17.5 14.3c1.7.7 2.8 2.3 3.1 4.7" /></svg></span><span>{t("m_join")}</span></button>
           <button onClick={() => goPage("giochi")}><span className="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h16M6 20v-5h12v5M8 15v-5h8v5M10 10V5h4v5" /></svg></span><span>Giochi</span></button>
@@ -120,6 +122,7 @@ export default function App() {
         {page === "profilo" && <div className="page"><ProfiloPage t={t} goPage={goPage} icoCal={ICO_CAL} /></div>}
         {page === "admin" && <div className="page"><AdminPage t={t} lang={lang} goPage={goPage} /></div>}
         {page === "attivita" && <div className="page"><AttivitaPage t={t} /></div>}
+        {page === "archivio" && <div className="page"><ArchivioLocandinePage t={t} lang={lang} /></div>}
         {page === "preghiere" && <div className="page"><PreghierePage t={t} lang={lang} /></div>}
         {page === "giochi" && <div className="page page-game"><Suspense fallback={<div className="tower-game"><div className="tower-loading"><span className="tower-spinner" />Caricamento del gioco…</div></div>}><GiochiPage /></Suspense></div>}
       </main>

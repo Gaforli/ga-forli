@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { trpc } from "@/providers/trpc";
-import { CATS, EVENT_IMG, VERSES } from "@/i18n";
-import { fmtDate, upcomingEvents, dayOfYear } from "@/lib/utils";
-import type { Lang, Page } from "@/types";
+import { VERSES } from "@/i18n";
+import { upcomingEvents, dayOfYear } from "@/lib/utils";
+import EventDetailDialog from "@/components/EventDetailDialog";
+import EventPosterButton from "@/components/EventPosterButton";
+import type { AppEvent, Lang, Page } from "@/types";
 
 interface Props {
   t: (k: string) => string;
@@ -19,8 +21,7 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
   const upcoming = upcomingEvents(events).slice(0, 5);
   const verse = VERSES[dayOfYear() % VERSES.length];
   const [liked, setLiked] = useState(false);
-  const postersQuery = trpc.content.getPosters.useQuery();
-  const posters = postersQuery.data?.images ?? [];
+  const [selectedEvent, setSelectedEvent] = useState<AppEvent | null>(null);
   const postersRef = useRef<HTMLDivElement>(null);
   const championQuery = trpc.game.champion.useQuery();
   const champion = championQuery.data;
@@ -41,32 +42,40 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
         </div>
       </div>
 
-      {postersQuery.isLoading && (
+      <div className="sechead home-events-head">
+        <h3>{t("h_upcoming")}</h3>
+        <button className="all" onClick={() => goPage("eventi")}><span>{t("see_all")}</span> ›</button>
+      </div>
+      {eventsQuery.isLoading && (
         <div className="postercard" aria-hidden="true"><div className="sk" style={{ height: 300 }} /></div>
       )}
-      {!postersQuery.isLoading && posters.length > 0 && (
+      {!eventsQuery.isLoading && upcoming.length > 0 && (
         <>
           <button
             type="button"
             className="poster-scroll-cue"
-            onClick={() => postersRef.current?.scrollIntoView({
-              behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-              block: "start",
-            })}
-            aria-label="Scorri per vedere le locandine"
+            onClick={() => {
+              const scroller = postersRef.current;
+              if (!scroller) return;
+              const atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 8;
+              scroller.scrollTo({
+                left: atEnd ? 0 : scroller.scrollLeft + scroller.clientWidth * 0.85,
+                behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+              });
+            }}
+            aria-label={t("home_scroll_events")}
           >
-            <span>scorri</span>
+            <span>{t("home_scroll_events")}</span>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg>
           </button>
-          <div className="posterscroll" ref={postersRef}>
-            {posters.map((img, i) => (
-              <div className="postercard" key={i}>
-                <img src={img} alt={`Locandina ${i + 1} del gruppo GA Forlì`} />
-              </div>
+          <div className="posterscroll" ref={postersRef} aria-label={t("h_upcoming")}>
+            {upcoming.map((event) => (
+              <EventPosterButton key={event.id} event={event} onOpen={setSelectedEvent} t={t} lang={lang} />
             ))}
           </div>
         </>
       )}
+      {!eventsQuery.isLoading && !upcoming.length && <div className="noevents">{t("noevents")}</div>}
 
       <section className="gamehome" aria-labelledby="gamehome-title">
         <span className="gamehome-kicker">TORRE DI BABELE · IL GIOCO 3D</span>
@@ -75,36 +84,6 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
         <p className="gamehome-champion">{champion ? <>Campione attuale: <b>{champion.nickname}</b> · {champion.score} piani</> : <><b>Il primo record è ancora da conquistare.</b></>}</p>
         <button onClick={() => goPage("giochi")}>Gioca ora <span aria-hidden="true">→</span></button>
       </section>
-
-      <div className="sechead">
-        <h3>{t("h_upcoming")}</h3>
-        <button className="all" onClick={() => goPage("eventi")}><span>{t("see_all")}</span> ›</button>
-      </div>
-      <div className="evscroll">
-        {eventsQuery.isLoading && (
-          <>
-            <div className="evcard" aria-hidden="true"><div className="sk" style={{ height: 132 }} /><div className="ebody"><div className="sk" style={{ height: 11, width: "55%", marginBottom: 8 }} /><div className="sk" style={{ height: 14, width: "85%" }} /><div className="sk" style={{ height: 11, width: "65%", marginTop: 6 }} /></div></div>
-            <div className="evcard" aria-hidden="true"><div className="sk" style={{ height: 132 }} /><div className="ebody"><div className="sk" style={{ height: 11, width: "45%", marginBottom: 8 }} /><div className="sk" style={{ height: 14, width: "80%" }} /><div className="sk" style={{ height: 11, width: "60%", marginTop: 6 }} /></div></div>
-          </>
-        )}
-        {upcoming.map((e) => (
-          <button className="evcard" key={e.id} onClick={() => goPage("eventi")}>
-            <div className="thumb">
-              <img src={e.image || EVENT_IMG[e.cat]} alt="" loading="lazy" />
-            </div>
-            <div className="ebody">
-              <span className="badge"><i style={{ background: CATS[e.cat].color }} />{t("cat_" + e.cat)}</span>
-              <div className="when">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A8794" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
-                {fmtDate(e.date, e.time, lang)}
-              </div>
-              <h5>{e.title}</h5>
-              <p>{e.desc}</p>
-            </div>
-          </button>
-        ))}
-        {!eventsQuery.isLoading && !upcoming.length && <div className="noevents" style={{ flex: 1 }}>{t("noevents")}</div>}
-      </div>
 
       <div className="sechead"><h3>{t("h_values")}</h3></div>
       <div className="values">
@@ -143,6 +122,8 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
           <svg width="24" height="24" viewBox="0 0 24 24" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20.5C7 16.5 3.5 13.4 3.5 9.6 3.5 7 5.5 5 8 5c1.6 0 3.1.8 4 2.1C12.9 5.8 14.4 5 16 5c2.5 0 4.5 2 4.5 4.6 0 3.8-3.5 6.9-8.5 10.9Z" /></svg>
         </button>
       </div>
+
+      <EventDetailDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} t={t} lang={lang} />
     </>
   );
 }

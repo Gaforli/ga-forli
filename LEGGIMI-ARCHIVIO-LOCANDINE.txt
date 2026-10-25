@@ -1,0 +1,114 @@
+GA FORLÌ — ARCHIVIO LOCANDINE E DETTAGLI EVENTO
+================================================
+
+Questo pacchetto contiene la versione completa del progetto Vercel/Supabase,
+con il nuovo Archivio Locandine. Non contiene file .env, node_modules o dist.
+
+COSA CAMBIA
+-----------
+- Nel menu laterale pubblico è disponibile "Archivio Locandine".
+- Le locandine archiviate sono raggruppate mese per mese.
+- Il Direttore GA sceglie esplicitamente il mese di archiviazione.
+- Archiviando di nuovo lo stesso evento si aggiorna la stessa voce, senza duplicati.
+- Il Direttore GA può spostare una locandina in un altro mese o rimuoverla
+  soltanto dall'archivio.
+- L'archivio conserva una copia storica: eliminare l'evento originale non elimina
+  la locandina archiviata.
+- Cliccando una locandina o una card evento si aprono locandina, titolo, data,
+  ora, categoria e descrizione completa.
+- La Home ha una sola sezione "Prossimi eventi", alimentata direttamente dagli
+  eventi, con il testo "scorri per i prossimi eventi".
+- Il vecchio contenuto home_posters non viene eliminato né reinizializzato.
+
+1. AGGIORNA IL DATABASE SUPABASE
+--------------------------------
+Le migrazioni si eseguono in Supabase → SQL Editor. Non sono state eseguite
+sulla produzione durante la preparazione di questo pacchetto.
+
+A. Migrazione delle locandine degli eventi (solo se mai eseguita)
+
+Se con il pacchetto precedente hai già eseguito:
+   db/migrations/0003_eventi_immagine_text.sql
+NON rieseguirla e passa direttamente al punto B.
+
+Se invece non l'hai mai eseguita:
+1. Apri quel file.
+2. Copia tutto il contenuto in una nuova query Supabase.
+3. Premi Run una sola volta.
+
+B. Nuova migrazione Archivio Locandine (da eseguire una sola volta)
+
+1. Apri il file incluso:
+   db/migrations/0004_archivio_locandine.sql
+2. Copia tutto il contenuto in una nuova query Supabase.
+3. Premi Run una sola volta.
+
+La migrazione 0004 crea soltanto la tabella poster_archive e i suoi indici.
+Non modifica né elimina eventi, locandine, preghiere, utenti o dati del gioco.
+Il campo event_id è soltanto un riferimento logico, senza cancellazione a cascata.
+
+NON rieseguire le migrazioni precedenti e NON eseguire di nuovo
+0002_tower_game.sql. Non usare comandi che reinizializzano il database.
+
+2. CARICA I FILE SU GITHUB
+--------------------------
+Puoi sostituire l'intero progetto con il contenuto del ZIP, mantenendo le cartelle
+e senza caricare alcun file .env. Se aggiorni file per file, carica questi file
+nei percorsi indicati:
+
+Nuovi file:
+- src/components/EventDetailDialog.tsx
+- src/components/EventPosterButton.tsx
+- src/pages/ArchivioLocandinePage.tsx
+- db/migrations/0004_archivio_locandine.sql
+
+File da sostituire:
+- src/App.tsx
+- src/i18n.ts
+- src/index.css
+- src/lib/utils.ts
+- src/types/index.ts
+- src/pages/AdminPage.tsx
+- src/pages/EventiPage.tsx
+- src/pages/HomePage.tsx
+- server/content-router.ts
+- db/schema.ts
+- api/server.mjs
+- .gitignore
+
+Il file api/server.mjs è già stato rigenerato e contiene le nuove API.
+Il file .gitignore continua a escludere .env e permette il caricamento della
+nuova migrazione 0004_archivio_locandine.sql.
+
+Questo file LEGGIMI-ARCHIVIO-LOCANDINE.txt può restare sul tuo computer:
+non è necessario caricarlo per far funzionare il sito.
+
+IMPORTANTE — CHIAVI E PASSWORD
+------------------------------
+- Non caricare mai il file .env su GitHub.
+- Il pacchetto non include .env e non modifica le tue credenziali.
+- Non aggiungere password, chiavi private o service_role nel codice frontend.
+- Non servono nuove variabili ambiente su Vercel: conserva quelle già presenti.
+- Non è stato reinserito alcun login pubblico Supabase.
+
+3. ATTENDI VERCEL
+-----------------
+Dopo il caricamento e il commit su GitHub, attendi che Vercel completi il deploy
+automatico con esito positivo. Il deploy Vercel NON è stato eseguito durante la
+preparazione di questo pacchetto.
+
+Se dopo un deploy riuscito il sito mostra ancora la versione precedente,
+aggiorna la pagina o svuota la cache del browser.
+
+4. COME USARE L'ARCHIVIO
+------------------------
+1. Accedi all'area Direttore GA.
+2. Nella scheda Eventi, premi "Archivia" accanto a un evento che ha una
+   locandina personalizzata.
+3. Scegli il mese e premi "Salva nell'archivio".
+4. Apri "Archivio Locandine" dal menu laterale per vedere il risultato pubblico.
+5. Nell'area riservata, scheda "Archivio Locandine", puoi cambiare il mese o
+   rimuovere la copia dall'archivio.
+
+Se un evento non ha ancora una locandina personalizzata, aprilo con "Modifica",
+carica la locandina, attendi l'anteprima e salva prima di archiviarlo.

@@ -51,6 +51,30 @@ export const events = pgTable("events", {
 export type AppEvent = typeof events.$inferSelect;
 export type InsertAppEvent = typeof events.$inferInsert;
 
+// Copia storica della locandina e dei dettagli dell'evento. L'id dell'evento
+// resta solo come riferimento logico: eliminare l'evento non cancella l'archivio.
+export const posterArchive = pgTable("poster_archive", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  archiveMonth: varchar("archive_month", { length: 7 }).notNull(),
+  eventDate: varchar("event_date", { length: 10 }).notNull(),
+  eventTime: varchar("event_time", { length: 5 }).default("").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  cat: eventCatEnum("cat").notNull(),
+  desc: text("desc"),
+  image: text("image").notNull(),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { mode: "date" })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+}, (table) => [
+  uniqueIndex("poster_archive_event_unique").on(table.eventId),
+  index("poster_archive_month_idx").on(table.archiveMonth),
+]);
+
+export type PosterArchive = typeof posterArchive.$inferSelect;
+
 export const siteContent = pgTable("site_content", {
   id: serial("id").primaryKey(),
   key: varchar("key", { length: 64 }).notNull().unique(),

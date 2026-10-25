@@ -2,6 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/providers/trpc";
 import { CATS, EVENT_IMG, MONTHS } from "@/i18n";
 import { fmtDate, upcomingEvents } from "@/lib/utils";
+import EventDetailDialog from "@/components/EventDetailDialog";
 import type { Lang, AppEvent } from "@/types";
 
 const DOW = ["L", "M", "M", "G", "V", "S", "D"];
@@ -10,21 +11,21 @@ function keyOf(y: number, m: number, d: number) {
   return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
 }
 
-function EventCard({ e, t, lang }: { e: AppEvent; t: (k: string) => string; lang: Lang }) {
+function EventCard({ e, t, lang, onOpen }: { e: AppEvent; t: (k: string) => string; lang: Lang; onOpen: (event: AppEvent) => void }) {
   const isLibero = e.title.trim().toLowerCase() === "libero";
   return (
-    <div className={`eventcard cat-${e.cat}${isLibero ? " libero" : ""}`}>
+    <button type="button" className={`eventcard cat-${e.cat}${isLibero ? " libero" : ""}`} onClick={() => onOpen(e)} aria-label={`${t("event_open")}: ${e.title}`}>
       <img className="ethumb" src={e.image || EVENT_IMG[e.cat]} alt="" loading="lazy" />
-      <div className="emain">
+      <span className="emain">
         <span className="ecat">{t("cat_" + e.cat)}</span>
-        <h5>{e.title}</h5>
-        <div className="ewhen">
+        <span className="eventcard-title">{e.title}</span>
+        <span className="ewhen">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7A8794" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
           {fmtDate(e.date, e.time, lang)}
-        </div>
-        <p className="edesc">{e.desc}</p>
-      </div>
-    </div>
+        </span>
+        <span className="edesc">{e.desc}</span>
+      </span>
+    </button>
   );
 }
 
@@ -33,6 +34,7 @@ export default function EventiPage({ t, lang }: { t: (k: string) => string; lang
   const events = eventsQuery.data ?? [];
   const [cal, setCal] = useState(() => new Date());
   const [selKey, setSelKey] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<AppEvent | null>(null);
 
   const y = cal.getFullYear(), m = cal.getMonth();
   const first = (new Date(y, m, 1).getDay() + 6) % 7;
@@ -94,7 +96,7 @@ export default function EventiPage({ t, lang }: { t: (k: string) => string; lang
           <div className="events">
             <h4>{selLabel}</h4>
             {selEvents.length
-              ? selEvents.map((e) => <EventCard key={e.id} e={e} t={t} lang={lang} />)
+              ? selEvents.map((e) => <EventCard key={e.id} e={e} t={t} lang={lang} onOpen={setSelectedEvent} />)
               : <div className="noevents">{t("noevents")}</div>}
           </div>
         )}
@@ -107,11 +109,12 @@ export default function EventiPage({ t, lang }: { t: (k: string) => string; lang
                 <div className="sk-evcard"><div className="sk sk-img" /><div className="sk-lines"><div className="sk w40" /><div className="sk w80" /><div className="sk w60" /></div></div>
               </>
             )}
-            {upcomingEvents(events).map((e) => <EventCard key={e.id} e={e} t={t} lang={lang} />)}
+            {upcomingEvents(events).map((e) => <EventCard key={e.id} e={e} t={t} lang={lang} onOpen={setSelectedEvent} />)}
             {!eventsQuery.isLoading && !events.length && <div className="noevents">{t("noevents")}</div>}
           </div>
         </div>
       </div>
+      <EventDetailDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} t={t} lang={lang} />
     </div>
   );
 }

@@ -15,6 +15,13 @@ export function fmtDate(iso: string, time: string | undefined, lang: Lang): stri
   return time ? s + " · " + time : s;
 }
 
+export function fmtArchiveMonth(month: string, lang: Lang): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const name = MONTHS[lang][monthNumber - 1] ?? month;
+  const label = `${name} ${year}`;
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 export function upcomingEvents(events: AppEvent[]): AppEvent[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
