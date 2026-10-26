@@ -38,6 +38,14 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
   };
   const championQuery = trpc.game.champion.useQuery();
   const champion = championQuery.data;
+  // Testi della card "I nostri valori": se il Direttore GA li ha salvati
+  // dall'area riservata usiamo quelli, altrimenti i testi delle traduzioni.
+  const valuesQuery = trpc.content.getValues.useQuery();
+  const savedValues = valuesQuery.data?.values?.[lang];
+  const valueText = (key: "v1_t" | "v1_d" | "v2_t" | "v2_d" | "v3_t" | "v3_d") => {
+    const saved = savedValues?.[key];
+    return saved && saved.trim() ? saved : t(key);
+  };
 
   return (
     <>
@@ -108,7 +116,7 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
 
       <section className="gamehome" aria-labelledby="gamehome-title">
         <span className="gamehome-kicker">TORRE DI BABELE · IL GIOCO 3D</span>
-        <h3 id="gamehome-title">Batti il record dei GA</h3>
+        <h3 id="gamehome-title">Batti il record della GA</h3>
         <p>Un blocco alla volta, costruisci la torre più alta. Precisione, pazienza e un pizzico di sfida.</p>
         <p className="gamehome-champion">{champion ? <>Campione attuale: <b>{champion.nickname}</b> · {champion.score} piani</> : <><b>Il primo record è ancora da conquistare.</b></>}</p>
         <button onClick={() => goPage("giochi")}>Gioca ora <span aria-hidden="true">→</span></button>
@@ -120,19 +128,19 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
           <span className="vico" style={{ background: "var(--color-secondary-soft)" }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2F5D47" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><circle cx="8" cy="9" r="3" /><circle cx="17" cy="10" r="2.4" /><path d="M2.8 19c.4-3.2 2.6-5 5.2-5s4.8 1.8 5.2 5M14.5 14.6c2.3.3 3.9 1.9 4.3 4.4" /></svg>
           </span>
-          <div><h5>{t("v1_t")}</h5><p>{t("v1_d")}</p></div>
+          <div><h5>{valueText("v1_t")}</h5><p>{valueText("v1_d")}</p></div>
         </div>
         <div className="value">
           <span className="vico" style={{ background: "var(--color-info-soft)" }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#33586E" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="M5 19C5 9 12 4 20 4c0 9-5 15-15 15Z" /><path d="M5 19c3-5 7-9 11-11" /></svg>
           </span>
-          <div><h5>{t("v2_t")}</h5><p>{t("v2_d")}</p></div>
+          <div><h5>{valueText("v2_t")}</h5><p>{valueText("v2_d")}</p></div>
         </div>
         <div className="value">
           <span className="vico" style={{ background: "var(--color-warning-soft)" }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8A6A12" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 19 L9 8 L13 14 L16 9 L21 19 Z" /></svg>
           </span>
-          <div><h5>{t("v3_t")}</h5><p>{t("v3_d")}</p></div>
+          <div><h5>{valueText("v3_t")}</h5><p>{valueText("v3_d")}</p></div>
         </div>
       </div>
 

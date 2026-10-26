@@ -30,13 +30,14 @@ interface Props {
 export default function AdminPage({ t, lang, goPage }: Props) {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const isAdmin = isAuthenticated && user?.role === "admin";
-  const [tab, setTab] = useState<"ev" | "tema" | "posters" | "archive" | "monthly" | "prayers">("ev");
+  const [tab, setTab] = useState<"ev" | "tema" | "posters" | "archive" | "monthly" | "prayers" | "values">("ev");
 
   const utils = trpc.useUtils();
   const eventsQuery = trpc.content.listEvents.useQuery(undefined, { enabled: isAdmin });
   const temaQuery = trpc.content.getTema.useQuery(undefined, { enabled: isAdmin });
   const archiveQuery = trpc.content.listPosterArchive.useQuery(undefined, { enabled: isAdmin });
   const postersQuery = trpc.content.getPosters.useQuery(undefined, { enabled: isAdmin });
+  const valuesQuery = trpc.content.getValues.useQuery(undefined, { enabled: isAdmin });
   const monthlyQuery = trpc.content.getMonthly.useQuery(undefined, { enabled: isAdmin });
   const pendingPrayersQuery = trpc.content.listPendingPrayers.useQuery(undefined, { enabled: isAdmin });
   const prayersQuery = trpc.content.listPrayers.useQuery(undefined, { enabled: isAdmin });
@@ -176,6 +177,49 @@ export default function AdminPage({ t, lang, goPage }: Props) {
 
   const submitPosters = () => {
     savePosters.mutate({ images: postersList });
+  };
+
+  // ── Card "I nostri valori": titoli e descrizioni per lingua ──
+  type ValueField = "v1_t" | "v1_d" | "v2_t" | "v2_d" | "v3_t" | "v3_d";
+  type ValueItem = Record<ValueField, string>;
+  const VALUES_LANGS = ["it", "en", "es", "pt"] as const;
+  const VALUES_FIELDS: ValueField[] = ["v1_t", "v1_d", "v2_t", "v2_d", "v3_t", "v3_d"];
+  const emptyValueItem = (): ValueItem => ({ v1_t: "", v1_d: "", v2_t: "", v2_d: "", v3_t: "", v3_d: "" });
+  const [valuesForm, setValuesForm] = useState<Record<(typeof VALUES_LANGS)[number], ValueItem>>({
+    it: emptyValueItem(), en: emptyValueItem(), es: emptyValueItem(), pt: emptyValueItem(),
+  });
+  const [valuesLoaded, setValuesLoaded] = useState(false);
+  const [valuesMsg, setValuesMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  useEffect(() => {
+    if (valuesQuery.data && !valuesLoaded) {
+      setValuesForm((prev) => {
+        const next = { ...prev };
+        for (const l of VALUES_LANGS) {
+          const saved = valuesQuery.data.values[l];
+          if (saved) next[l] = { ...emptyValueItem(), ...saved };
+        }
+        return next;
+      });
+      setValuesLoaded(true);
+    }
+  }, [valuesQuery.data, valuesLoaded]);
+
+  const saveValues = trpc.content.saveValues.useMutation({
+    onSuccess: () => {
+      utils.content.getValues.invalidate();
+      setValuesMsg({ text: t("adm_values_done"), ok: true });
+      setTimeout(() => setValuesMsg(null), 3000);
+    },
+    onError: () => setValuesMsg({ text: t("adm_perr"), ok: false }),
+  });
+
+  const setValueField = (l: (typeof VALUES_LANGS)[number], field: ValueField, v: string) => {
+    setValuesForm((prev) => ({ ...prev, [l]: { ...prev[l], [field]: v } }));
+  };
+
+  const submitValues = () => {
+    saveValues.mutate({ values: valuesForm });
   };
 
   // ── Locandina mensile ──
@@ -441,6 +485,7 @@ export default function AdminPage({ t, lang, goPage }: Props) {
         <button className={tab === "ev" ? "on" : ""} onClick={() => setTab("ev")}>{t("adm_events")}</button>
         <button className={tab === "tema" ? "on" : ""} onClick={() => setTab("tema")}>{t("adm_theme")}</button>
         <button className={tab === "posters" ? "on" : ""} onClick={() => setTab("posters")}>{t("adm_posters")}</button>
+        <button className={tab === "values" ? "on" : ""} onClick={() => setTab("values")}>{t("adm_values")}</button>
         <button className={tab === "archive" ? "on" : ""} onClick={() => setTab("archive")}>{t("adm_archive")}</button>
         <button className={tab === "monthly" ? "on" : ""} onClick={() => setTab("monthly")}>{t("adm_monthly")}</button>
         <button className={tab === "prayers" ? "on" : ""} onClick={() => setTab("prayers")}>
@@ -589,6 +634,45 @@ export default function AdminPage({ t, lang, goPage }: Props) {
             </button>
           )}
           {postersMsg && <span className="savedmsg" style={postersMsg.ok ? {} : { color: "var(--color-danger)" }}>{postersMsg.text}</span>}
+        </div>
+      )}
+
+      {tab === "values" && (
+        <div className="formcard">
+          <h4>{t("adm_values")}</h4>
+          <p className="sub" style={{ marginBottom: 14 }}>{t("adm_values_d")}</p>
+
+          {VALUES_LANGS.map((l) => (
+            <fieldset key={l} style={{ border: "1px solid var(--color-border)", borderRadius: 14, padding: "14px 14px 16px", marginBottom: 16 }}>
+              <legend style={{ padding: "0 8px", fontWeight: 700 }}>{t(`adm_values_lang_${l}`)}</legend>
+              {([1, 2, 3] as const).map((n) => (
+                <div key={n} style={{ marginBottom: n === 3 ? 0 : 12 }}>
+                  <span className="flabel" style={{ marginTop: 4 }}>{t("adm_values_item")} {n}</span>
+                  <input
+                    className="finput"
+                    id={`values-${l}-v${n}_t`}
+                    placeholder={t("adm_values_title_ph")}
+                    value={valuesForm[l][`v${n}_t` as ValueField]}
+                    onChange={(e) => setValueField(l, `v${n}_t` as ValueField, e.target.value)}
+                  />
+                  <textarea
+                    className="ftext"
+                    id={`values-${l}-v${n}_d`}
+                    style={{ minHeight: 64, marginTop: 6 }}
+                    placeholder={t("adm_values_desc_ph")}
+                    value={valuesForm[l][`v${n}_d` as ValueField]}
+                    onChange={(e) => setValueField(l, `v${n}_d` as ValueField, e.target.value)}
+                  />
+                </div>
+              ))}
+            </fieldset>
+          ))}
+          <p className="sub" style={{ marginBottom: 12, fontSize: ".85rem" }}>{t("adm_values_hint")}</p>
+
+          <button className="savebtn" onClick={submitValues} disabled={saveValues.isPending}>
+            {t("adm_values_save")}
+          </button>
+          {valuesMsg && <span className="savedmsg" style={valuesMsg.ok ? {} : { color: "var(--color-danger)" }}>{valuesMsg.text}</span>}
         </div>
       )}
 
