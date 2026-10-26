@@ -31667,6 +31667,8 @@ var POSTERS_KEY = "home_posters";
 var DEFAULT_POSTERS = ["assets/appuntamenti_ottobre.jpg"];
 var MONTHLY_KEY = "monthly_poster";
 var MAX_POSTER_CHARS = 6e6;
+var VALUES_KEY = "home_values";
+var VALUES_LANGS = ["it", "en", "es", "pt"];
 var eventInput = external_exports.object({
   date: external_exports.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data non valida"),
   time: external_exports.string().max(5).default(""),
@@ -31685,6 +31687,17 @@ var postersInput = external_exports.object({
 });
 var monthlyInput = external_exports.object({
   image: external_exports.string().max(MAX_POSTER_CHARS)
+});
+var valueItemInput = external_exports.object({
+  v1_t: external_exports.string().max(120).default(""),
+  v1_d: external_exports.string().max(500).default(""),
+  v2_t: external_exports.string().max(120).default(""),
+  v2_d: external_exports.string().max(500).default(""),
+  v3_t: external_exports.string().max(120).default(""),
+  v3_d: external_exports.string().max(500).default("")
+});
+var valuesInput = external_exports.object({
+  values: external_exports.record(external_exports.enum(VALUES_LANGS), valueItemInput)
 });
 var archiveMonthInput = external_exports.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Mese non valido");
 var POSTIT_COLORS = ["#FFF3B8", "#DDE8C8", "#FFD9CF", "#FFE9B0", "#E3F0DA", "#FADCD5"];
@@ -31903,6 +31916,45 @@ var contentRouter = createRouter({
       await db.update(siteContent).set({ value }).where(eq(siteContent.key, MONTHLY_KEY));
     } else {
       await db.insert(siteContent).values({ key: MONTHLY_KEY, value });
+    }
+    return { ok: true };
+  }),
+  getValues: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, VALUES_KEY));
+    if (!rows.length) return { values: {} };
+    try {
+      const parsed = JSON.parse(rows[0].value);
+      const values2 = {};
+      if (parsed.values && typeof parsed.values === "object") {
+        for (const lang of VALUES_LANGS) {
+          const item = parsed.values[lang];
+          if (item && typeof item === "object") {
+            const rec = item;
+            values2[lang] = {
+              v1_t: typeof rec.v1_t === "string" ? rec.v1_t : "",
+              v1_d: typeof rec.v1_d === "string" ? rec.v1_d : "",
+              v2_t: typeof rec.v2_t === "string" ? rec.v2_t : "",
+              v2_d: typeof rec.v2_d === "string" ? rec.v2_d : "",
+              v3_t: typeof rec.v3_t === "string" ? rec.v3_t : "",
+              v3_d: typeof rec.v3_d === "string" ? rec.v3_d : ""
+            };
+          }
+        }
+      }
+      return { values: values2 };
+    } catch {
+      return { values: {} };
+    }
+  }),
+  saveValues: adminQuery.input(valuesInput).mutation(async ({ input }) => {
+    const db = getDb();
+    const value = JSON.stringify({ values: input.values });
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, VALUES_KEY));
+    if (rows.length) {
+      await db.update(siteContent).set({ value }).where(eq(siteContent.key, VALUES_KEY));
+    } else {
+      await db.insert(siteContent).values({ key: VALUES_KEY, value });
     }
     return { ok: true };
   }),
