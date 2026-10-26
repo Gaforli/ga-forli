@@ -12,6 +12,7 @@ type Props = {
   onFall: () => void;
   onOver: (result: GameResult) => void;
   onPerformance: (fps: number) => void;
+  captureRef?: React.MutableRefObject<(() => Promise<Blob | null>) | null>;
 };
 
 export default function TowerCanvas(props: Props) {
@@ -38,13 +39,17 @@ export default function TowerCanvas(props: Props) {
     } catch {
       setError(true);
     }
-    return () => { engine.current?.dispose(); engine.current = null; };
-    // A new session remounts this component through its React key.
+    return () => { engine.current?.dispose(); engine.current = null; };    // A new session remounts this component through its React key.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { engine.current?.setStatus(props.status); }, [props.status]);
   useEffect(() => { engine.current?.setQuality(props.quality); }, [props.quality]);
+  useEffect(() => {
+    if (!props.captureRef) return;
+    props.captureRef.current = () => engine.current?.captureTowerImage() ?? Promise.resolve(null);
+    return () => { if (props.captureRef) props.captureRef.current = null; };
+  }, [props.captureRef]);
 
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
