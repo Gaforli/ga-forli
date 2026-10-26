@@ -94,6 +94,9 @@ export default function GiochiPage() {
   const [quality, setQuality] = useState<GameQuality>(() => (localStorage.getItem("ga_tower_quality") as GameQuality) || "auto");
   const [audioOn, setAudioOn] = useState(() => localStorage.getItem("ga_tower_audio") !== "off");
   const [personalRecord, setPersonalRecord] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
+  const captureRef = useRef<(() => Promise<Blob | null>) | null>(null);
   const audio = useRef<ReturnType<typeof GameAudio> | null>(null);
   if (!audio.current) audio.current = GameAudio();
   const autoLight = useRef(false);
@@ -140,6 +143,30 @@ export default function GiochiPage() {
   };
 
   const openLeaderboard = () => { if (status === "playing") setStatus("paused"); setLeaderboardOpen(true); };
+
+  // Scarica la foto HD della torre intera (PNG). Su iOS, dove l'attributo
+  // download può essere ignorato, l'immagine si apre in una nuova scheda.
+  const saveTowerPhoto = async () => {
+    if (photoBusy || !captureRef.current) return;
+    setPhotoBusy(true); setPhotoError(false);
+    try {
+      const blob = await captureRef.current();
+      if (!blob) throw new Error("no-image");
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `torre-di-babele-${result?.score ?? 0}-piani.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch {
+      setPhotoError(true);
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
   const perfect = useCallback(() => { setPerfectFlash(true); window.setTimeout(() => setPerfectFlash(false), 700); audio.current?.perfect(); }, []);
   const performance = useCallback((value: number) => {
     if (quality === "auto" && value < 42 && !autoLight.current) { autoLight.current = true; setQuality("light"); }
@@ -147,7 +174,7 @@ export default function GiochiPage() {
 
   return (
     <div className={`tower-game status-${status}`}>
-      {sessionId && status !== "intro" && <TowerCanvas key={sessionId} sessionId={sessionId} status={status} quality={quality} onReady={() => setSceneReady(true)} onScore={(s, p) => { setScore(s); setPerfects(p); }} onPerfect={perfect} onStone={() => audio.current?.stone()} onFall={() => audio.current?.fall()} onOver={gameOver} onPerformance={performance} />}
+      {sessionId && status !== "intro" && <TowerCanvas key={sessionId} sessionId={sessionId} status={status} quality={quality} captureRef={captureRef} onReady={() => setSceneReady(true)} onScore={(s, p) => { setScore(s); setPerfects(p); }} onPerfect={perfect} onStone={() => audio.current?.stone()} onFall={() => audio.current?.fall()} onOver={gameOver} onPerformance={performance} />}
 
       <div className="tower-topline"><span>GA FORLÌ</span><span>TORRE DI BABELE</span></div>
       {status !== "intro" && <div className="tower-tools">
@@ -182,6 +209,8 @@ export default function GiochiPage() {
         {!saved && result.score > 0 && <div className="save-run"><label htmlFor="tower-nickname">Il tuo nome o nickname</label><input id="tower-nickname" value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={20} autoComplete="nickname" placeholder="Es. Luigi" /><button className="game-primary" onClick={save} disabled={submitRun.isPending || nickname.trim().length < 2}>{submitRun.isPending ? "Salvataggio…" : saveError ? "Riprova a salvare" : "Salva in classifica"}</button></div>}
         {!saved && result.score === 0 && <p className="game-empty">Posa almeno un piano per entrare in classifica.</p>}
         {saveError && <p className="game-error" role="alert">{saveError} Il risultato resta disponibile per un nuovo tentativo.</p>}
+        {result.score > 0 && <button className="game-secondary" onClick={saveTowerPhoto} disabled={photoBusy}>{photoBusy ? "Preparo la foto…" : "Salva la torre in HD"}</button>}
+        {photoError && <p className="game-error" role="alert">Non riesco a creare l'immagine su questo dispositivo. Riprova.</p>}
         <div className="over-actions"><button className="game-secondary" onClick={play} disabled={startSession.isPending}>Riprova</button><button className="game-secondary" onClick={openLeaderboard}>Vedi classifica</button></div>
       </section></div>}
 
