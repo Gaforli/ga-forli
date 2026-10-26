@@ -23,6 +23,13 @@ const DEFAULT_POSTERS = ["assets/appuntamenti_ottobre.jpg"];
 const MONTHLY_KEY = "monthly_poster";
 const MAX_POSTER_CHARS = 6_000_000; // ~4,5 MB di immagine in base64
 
+// Card "I nostri valori" della home: titoli e descrizioni delle tre voci,
+// per lingua (it/en/es/pt). Salvate su site_content; i campi vuoti
+// ricadono sui testi predefiniti delle traduzioni del sito.
+const VALUES_KEY = "home_values";
+const VALUES_LANGS = ["it", "en", "es", "pt"] as const;
+type ValuesTexts = Record<string, { v1_t: string; v1_d: string; v2_t: string; v2_d: string; v3_t: string; v3_d: string }>;
+
 const eventInput = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data non valida"),
   time: z.string().max(5).default(""),
@@ -44,6 +51,19 @@ const postersInput = z.object({
 
 const monthlyInput = z.object({
   image: z.string().max(MAX_POSTER_CHARS),
+});
+
+const valueItemInput = z.object({
+  v1_t: z.string().max(120).default(""),
+  v1_d: z.string().max(500).default(""),
+  v2_t: z.string().max(120).default(""),
+  v2_d: z.string().max(500).default(""),
+  v3_t: z.string().max(120).default(""),
+  v3_d: z.string().max(500).default(""),
+});
+
+const valuesInput = z.object({
+  values: z.record(z.enum(VALUES_LANGS), valueItemInput),
 });
 
 const archiveMonthInput = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Mese non valido");
@@ -290,6 +310,47 @@ export const contentRouter = createRouter({
       await db.update(siteContent).set({ value }).where(eq(siteContent.key, MONTHLY_KEY));
     } else {
       await db.insert(siteContent).values({ key: MONTHLY_KEY, value });
+    }
+    return { ok: true };
+  }),
+
+  getValues: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, VALUES_KEY));
+    if (!rows.length) return { values: {} as ValuesTexts };
+    try {
+      const parsed = JSON.parse(rows[0].value) as { values?: unknown };
+      const values: ValuesTexts = {};
+      if (parsed.values && typeof parsed.values === "object") {
+        for (const lang of VALUES_LANGS) {
+          const item = (parsed.values as Record<string, unknown>)[lang];
+          if (item && typeof item === "object") {
+            const rec = item as Record<string, unknown>;
+            values[lang] = {
+              v1_t: typeof rec.v1_t === "string" ? rec.v1_t : "",
+              v1_d: typeof rec.v1_d === "string" ? rec.v1_d : "",
+              v2_t: typeof rec.v2_t === "string" ? rec.v2_t : "",
+              v2_d: typeof rec.v2_d === "string" ? rec.v2_d : "",
+              v3_t: typeof rec.v3_t === "string" ? rec.v3_t : "",
+              v3_d: typeof rec.v3_d === "string" ? rec.v3_d : "",
+            };
+          }
+        }
+      }
+      return { values };
+    } catch {
+      return { values: {} as ValuesTexts };
+    }
+  }),
+
+  saveValues: adminQuery.input(valuesInput).mutation(async ({ input }) => {
+    const db = getDb();
+    const value = JSON.stringify({ values: input.values });
+    const rows = await db.select().from(siteContent).where(eq(siteContent.key, VALUES_KEY));
+    if (rows.length) {
+      await db.update(siteContent).set({ value }).where(eq(siteContent.key, VALUES_KEY));
+    } else {
+      await db.insert(siteContent).values({ key: VALUES_KEY, value });
     }
     return { ok: true };
   }),
