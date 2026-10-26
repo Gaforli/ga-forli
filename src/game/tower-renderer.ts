@@ -438,6 +438,86 @@ export class TowerRenderer {
     if (status === "over") this.overCameraTime = 0;
   }
 
+  // Fotografa la torre intera in HD: renderizza la scena su un canvas
+  // offscreen ad alta risoluzione inquadrando tutta la torre dal basso
+  // in alto. Non tocca stato, punteggi né il canvas di gioco visibile.
+  async captureTowerImage(): Promise<Blob | null> {
+    if (this.disposed) return null;
+
+    // Limiti reali della torre: i blocchi possono sporgere da ogni lato.
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (const block of this.state.blocks) {
+      minX = Math.min(minX, block.x - block.width / 2);
+      maxX = Math.max(maxX, block.x + block.width / 2);
+      minZ = Math.min(minZ, block.z - block.depth / 2);
+      maxZ = Math.max(maxZ, block.z + block.depth / 2);
+    }
+    if (!this.state.blocks.length) { minX = minZ = -2.2; maxX = maxZ = 2.2; }
+    const top = (this.state.score + 1) * TOWER_CONFIG.blockHeight;
+    const height = Math.max(top + 1.0, 2.8);
+    const centerX = (minX + maxX) / 2;
+    const centerZ = (minZ + maxZ) / 2;
+    const extentX = (maxX - minX) / 2;
+    const extentZ = (maxZ - minZ) / 2;
+    const centerY = height / 2 - 0.35;
+
+    // Formato verticale adattato all'altezza: torri alte → più stretto.
+    const aspect = height > 15 ? 9 / 16 : height > 8 ? 2 / 3 : 3 / 4;
+    const outH = 2048;
+    const outW = Math.round(outH * aspect);
+
+    const capture = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+    try {
+      capture.outputColorSpace = THREE.SRGBColorSpace;
+      capture.toneMapping = THREE.ACESFilmicToneMapping;
+      capture.toneMappingExposure = 1;
+      capture.shadowMap.enabled = this.renderer.shadowMap.enabled;
+      capture.shadowMap.type = THREE.PCFSoftShadowMap;
+      capture.setPixelRatio(1);
+      capture.setSize(outW, outH, false);
+
+      const camera = new THREE.PerspectiveCamera(35, outW / outH, 0.1, 400);
+      const vFov = THREE.MathUtils.degToRad(camera.fov);
+      const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+      // La fotocamera guarda la torre dalla stessa angolazione del gioco:
+      // direzione orizzontale (0.62, 0.78), asse destro (0.78, -0.62).
+      const projectedWidth = extentX * 0.78 + extentZ * 0.62;
+      const nearFace = extentX * 0.62 + extentZ * 0.78;
+      const distanceForHeight = (height / 2) / Math.tan(vFov / 2);
+      const distanceForWidth = projectedWidth / Math.tan(hFov / 2);
+      const distance = Math.max(distanceForHeight, distanceForWidth) * 1.16 + nearFace + 2.5;
+      camera.position.set(centerX + distance * 0.62, centerY + distance * 0.16, centerZ + distance * 0.78);
+      camera.lookAt(centerX, centerY, centerZ);
+
+      // Scena pulita e nitida per la foto: niente polvere, detriti né
+      // blocco attivo; la nebbia è attenuata (a distanza fotografica
+      // la torre risulterebbe altrimenti sbiadita).
+      const dustWasVisible = this.dust.visible;
+      const activeWasVisible = this.activeMesh.visible;
+      const debrisVisibility = this.debris.map((d) => d.mesh.visible);
+      const fog = this.scene.fog instanceof THREE.FogExp2 ? this.scene.fog : null;
+      const fogDensity = fog?.density ?? 0;
+      this.dust.visible = false;
+      this.activeMesh.visible = false;
+      this.debris.forEach((d) => { d.mesh.visible = false; });
+      if (fog) fog.density = 0.0035;
+
+      capture.render(this.scene, camera);
+
+      this.dust.visible = dustWasVisible;
+      this.activeMesh.visible = activeWasVisible;
+      this.debris.forEach((d, i) => { d.mesh.visible = debrisVisibility[i]; });
+      if (fog) fog.density = fogDensity;
+
+      return await new Promise<Blob | null>((resolve) => capture.domElement.toBlob(resolve, "image/png"));
+    } catch {
+      return null;
+    } finally {
+      capture.dispose();
+      capture.forceContextLoss();
+    }
+  }
+
   setQuality(quality: GameQuality) {
     this.quality = quality;
     const light = quality === "light" || (quality === "auto" && ((navigator.hardwareConcurrency || 4) <= 4 || window.innerWidth < 500));
