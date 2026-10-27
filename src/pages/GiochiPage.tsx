@@ -96,6 +96,7 @@ export default function GiochiPage() {
   const [personalRecord, setPersonalRecord] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState(false);
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const captureRef = useRef<(() => Promise<Blob | null>) | null>(null);
   const audio = useRef<ReturnType<typeof GameAudio> | null>(null);
   if (!audio.current) audio.current = GameAudio();
@@ -144,22 +145,35 @@ export default function GiochiPage() {
 
   const openLeaderboard = () => { if (status === "playing") setStatus("paused"); setLeaderboardOpen(true); };
 
-  // Scarica la foto HD della torre intera (PNG). Su iOS, dove l'attributo
-  // download può essere ignorato, l'immagine si apre in una nuova scheda.
+  // Scarica la foto HD della torre (PNG). Su iPhone/iPad Safari ignora
+  // l'attributo download quando il blob arriva in modo asincrono: in quel
+  // caso l'immagine si apre in una scheda a schermo intero, da cui si salva
+  // con un tocco prolungato → "Salva in Foto".
   const saveTowerPhoto = async () => {
     if (photoBusy || !captureRef.current) return;
     setPhotoBusy(true); setPhotoError(false);
     try {
       const blob = await captureRef.current();
       if (!blob) throw new Error("no-image");
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `torre-di-babele-${result?.score ?? 0}-piani.png`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+      const isAppleMobile = /iP(hone|ad|od)/.test(navigator.userAgent);
+      if (isAppleMobile) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error("read-failed"));
+          reader.readAsDataURL(blob);
+        });
+        setPhotoDataUrl(dataUrl);
+      } else {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `torre-di-babele-${result?.score ?? 0}-piani.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }
     } catch {
       setPhotoError(true);
     } finally {
@@ -190,7 +204,7 @@ export default function GiochiPage() {
       {status === "intro" && <div className="tower-intro">
         <div className="intro-ziggurat" aria-hidden="true"><i /><i /><i /><i /></div>
         <span className="game-eyebrow">IL GIOCO DELLA GA</span><h1>Torre<br />di Babele</h1>
-        <p className="intro-lead">Impila i blocchi, raggiungi nuove altezze e batti il record della GA!</p>
+        <p className="intro-lead">Impila i blocchi, raggiungi nuove altezze e batti il record dei GA!</p>
         <div className="intro-record"><span>RECORD ASSOLUTO</span><b>{champion.data ? `${champion.data.score} piani · ${champion.data.nickname}` : "Ancora da conquistare"}</b></div>
         {saveError && <p className="game-error" role="alert">{saveError}</p>}
         <button className="game-primary" onClick={play} disabled={startSession.isPending}>{startSession.isPending ? "Preparazione…" : "Gioca"}</button>
@@ -204,7 +218,7 @@ export default function GiochiPage() {
         <span className="game-eyebrow">TORRE COMPLETATA</span><h2 id="over-title">La tua torre</h2>
         <div className="result-numbers"><div><b>{result.score}</b><span>piani</span></div><div><b>{result.perfects}</b><span>perfetti</span></div></div>
         {personalRecord && <p className="new-personal">Nuovo record personale!</p>}
-        {saved?.newAbsoluteRecord && <p className="new-record">Nuovo record assoluto della GA!</p>}
+        {saved?.newAbsoluteRecord && <p className="new-record">Nuovo record assoluto dei GA!</p>}
         {saved && <p className="save-success" role="status">✓ Risultato salvato in classifica{saved.duplicate ? " (invio già registrato)" : ""}.</p>}
         {!saved && result.score > 0 && <div className="save-run"><label htmlFor="tower-nickname">Il tuo nome o nickname</label><input id="tower-nickname" value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={20} autoComplete="nickname" placeholder="Es. Luigi" /><button className="game-primary" onClick={save} disabled={submitRun.isPending || nickname.trim().length < 2}>{submitRun.isPending ? "Salvataggio…" : saveError ? "Riprova a salvare" : "Salva in classifica"}</button></div>}
         {!saved && result.score === 0 && <p className="game-empty">Posa almeno un piano per entrare in classifica.</p>}
@@ -213,6 +227,16 @@ export default function GiochiPage() {
         {photoError && <p className="game-error" role="alert">Non riesco a creare l'immagine su questo dispositivo. Riprova.</p>}
         <div className="over-actions"><button className="game-secondary" onClick={play} disabled={startSession.isPending}>Riprova</button><button className="game-secondary" onClick={openLeaderboard}>Vedi classifica</button></div>
       </section></div>}
+
+      {photoDataUrl && <div className="game-modal-backdrop" onPointerDown={(e) => { if (e.target === e.currentTarget) setPhotoDataUrl(null); }}>
+        <section className="game-modal photo-modal" role="dialog" aria-modal="true" aria-labelledby="photo-title">
+          <button className="game-close" onClick={() => setPhotoDataUrl(null)} aria-label="Chiudi la foto">×</button>
+          <span className="game-eyebrow">TORRE DI BABELE</span>
+          <h2 id="photo-title">La tua torre in HD</h2>
+          <img className="photo-full" src={photoDataUrl} alt={`La torre di Babele da ${result?.score ?? 0} piani`} />
+          <p className="photo-hint">Tieni premuta l'immagine e scegli «Salva in Foto».</p>
+        </section>
+      </div>}
 
       {status !== "intro" && <div className="tower-bottom"><button onClick={openLeaderboard}>Classifica</button><label>Qualità<select value={quality} onChange={(e) => setQuality(e.target.value as GameQuality)}><option value="auto">Automatica</option><option value="high">Alta</option><option value="light">Leggera</option></select></label></div>}
       <Leaderboard open={leaderboardOpen} onClose={() => setLeaderboardOpen(false)} />

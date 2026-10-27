@@ -18,7 +18,8 @@ interface Props {
 export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
   const eventsQuery = trpc.content.listEvents.useQuery();
   const events = eventsQuery.data ?? [];
-  const upcoming = upcomingEvents(events).slice(0, 5);
+  // Tutti gli eventi futuri nel carosello, senza limite di numero.
+  const upcoming = upcomingEvents(events);
   const postersQuery = trpc.content.getPosters.useQuery();
   const posters = postersQuery.data?.images ?? [];
   const verse = VERSES[dayOfYear() % VERSES.length];
@@ -153,7 +154,7 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
 
       <section className="gamehome" aria-labelledby="gamehome-title">
         <span className="gamehome-kicker">TORRE DI BABELE · IL GIOCO 3D</span>
-        <h3 id="gamehome-title">Batti il record della GA</h3>
+        <h3 id="gamehome-title">Batti il record dei GA</h3>
         <p>Un blocco alla volta, costruisci la torre più alta. Precisione, pazienza e un pizzico di sfida.</p>
         <p className="gamehome-champion">{champion ? <>Campione attuale: <b>{champion.nickname}</b> · {champion.score} piani</> : <><b>Il primo record è ancora da conquistare.</b></>}</p>
         <button onClick={() => goPage("giochi")}>Gioca ora <span aria-hidden="true">→</span></button>
