@@ -360,7 +360,7 @@ export const contentRouter = createRouter({
     const db = getDb();
     const rows = await db.select().from(prayerRequests)
       .where(eq(prayerRequests.status, "approved"))
-      .orderBy(desc(prayerRequests.createdAt));
+      .orderBy(desc(prayerRequests.createdAt), desc(prayerRequests.id));
     return rows.map((r) => ({
       id: Number(r.id),
       title: r.title,
@@ -400,7 +400,7 @@ export const contentRouter = createRouter({
     const db = getDb();
     const rows = await db.select().from(prayerRequests)
       .where(eq(prayerRequests.status, "pending"))
-      .orderBy(desc(prayerRequests.createdAt));
+      .orderBy(desc(prayerRequests.createdAt), desc(prayerRequests.id));
     return rows.map((r) => ({ id: Number(r.id), title: r.title, body: r.body ?? "", author: r.authorName ?? "", color: r.color }));
   }),
 
