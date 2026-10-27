@@ -589,6 +589,22 @@ svg { display: block; }
 }
 
 /* ==================== TORRE DI BABELE ==================== */
+/* Card "Preghiamo per..." in home: anteprima delle prime 4 richieste */
+.hpray { margin-top: var(--space-6); }
+.hpray .sechead { margin-bottom: var(--space-3); }
+.hpray-board { background: url("/assets/cork.png") repeat; background-size: 200px; border: 9px solid #E8D9BF; border-radius: var(--radius-xl); box-shadow: var(--shadow-md), inset 0 2px 8px rgba(90, 60, 30, .3); padding: 14px 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: start; }
+.hpray-postit { min-height: 108px; padding: 16px 11px 10px; gap: 4px; }
+.hpray-postit .ptitle2 { font-size: 1.14rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hpray-postit .pbody { font-size: .98rem; -webkit-line-clamp: 2; }
+.hpray-postit .pin { width: 12px; height: 12px; top: -5px; }
+.hpray-cta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 13px 16px; border: none; border-radius: var(--radius-pill, 999px); background: var(--color-primary, #2F5D47); color: #fff; font: inherit; font-weight: 700; cursor: pointer; box-shadow: var(--shadow-sm); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+.hpray-cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.hpray-cta:active { transform: scale(.98); }
+@media (min-width: 720px) {
+  .hpray-board { grid-template-columns: repeat(4, 1fr); padding: 18px 16px; gap: 14px; }
+  .hpray-postit { min-height: 128px; }
+  .hpray-cta { width: auto; margin: 14px auto 0; padding: 13px 28px; display: flex; }
+}
 .gamehome { position: relative; overflow: hidden; margin-top: var(--space-6); padding: 24px; border: 1px solid rgba(211,177,116,.42); border-radius: var(--radius-xl); color: #f8edda; background: linear-gradient(120deg,#173c49,#27535a 55%,#6e6047); box-shadow: var(--shadow-md); }
 .gamehome::after { content:""; position:absolute; width:150px; height:150px; right:-35px; bottom:-55px; border:20px solid rgba(229,196,137,.1); transform:rotate(45deg); }
 .gamehome .gamehome-kicker { color:#e6c88f; font-size:.72rem; font-weight:800; letter-spacing:.16em; }
