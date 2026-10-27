@@ -46,6 +46,9 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
     const saved = savedValues?.[key];
     return saved && saved.trim() ? saved : t(key);
   };
+  // Anteprima delle prime 4 richieste di preghiera approvate per la card in home.
+  const prayersQuery = trpc.content.listPrayers.useQuery();
+  const prayerPreview = (prayersQuery.data ?? []).slice(0, 4);
 
   return (
     <>
@@ -113,6 +116,40 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
         </>
       )}
       {!eventsQuery.isLoading && !upcoming.length && <div className="noevents">{t("noevents")}</div>}
+
+      <section className="hpray" aria-labelledby="hpray-title">
+        <div className="sechead"><h3 id="hpray-title">{t("t_pray")}</h3></div>
+        {prayersQuery.isLoading && (
+          <div className="hpray-board" aria-hidden="true">
+            <div className="postit hpray-postit" style={{ ["--tilt" as string]: "-1.4deg", background: "#FFF3B8" }}><div className="sk" style={{ height: 84 }} /></div>
+            <div className="postit hpray-postit" style={{ ["--tilt" as string]: "1.3deg", background: "#DDE8C8" }}><div className="sk" style={{ height: 84 }} /></div>
+          </div>
+        )}
+        {!prayersQuery.isLoading && prayerPreview.length > 0 && (
+          <div className="hpray-board">
+            {prayerPreview.map((p, i) => (
+              <button
+                key={p.id}
+                className="postit hpray-postit"
+                style={{ ["--tilt" as string]: ["-1.4deg", "1.3deg", "-0.9deg", "1.1deg"][i % 4], background: p.color || "#FFF3B8" }}
+                onClick={() => goPage("preghiere")}
+                aria-label={`${t("pray_for")} ${p.title}`}
+              >
+                <span className="pin" style={{ background: ["#C96F4A", "#5B7B9A", "#7A9A5B", "#9A5B7B"][i % 4] }} aria-hidden="true" />
+                <span className="ptitle2">{p.title}</span>
+                <span className="pbody">{p.body}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {!prayersQuery.isLoading && prayerPreview.length === 0 && (
+          <p className="sub" style={{ margin: "0 0 10px" }}>{t("home_pray_empty")}</p>
+        )}
+        <button className="hpray-cta" onClick={() => goPage("preghiere")}>
+          <span>{t("home_pray_all")}</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg>
+        </button>
+      </section>
 
       <section className="gamehome" aria-labelledby="gamehome-title">
         <span className="gamehome-kicker">TORRE DI BABELE · IL GIOCO 3D</span>
