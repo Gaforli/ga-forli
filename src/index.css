@@ -656,6 +656,8 @@ svg { display: block; }
 .game-modal-backdrop { position:absolute; z-index:10; inset:0; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(9,28,36,.66); backdrop-filter:blur(7px); overflow-y:auto; }
 .game-modal { position:relative; width:min(100%,480px); max-height:calc(100% - 12px); overflow-y:auto; padding:30px 24px 24px; border:1px solid #d8b77c66; border-radius:24px; background:linear-gradient(145deg,#1b414c,#122f3a); box-shadow:0 22px 70px #0007; text-align:center; }
 .game-modal h2 { margin:6px 0 12px; color:#fff0d4; font-family:Georgia,serif; font-size:2rem; font-weight:400; }
+.photo-modal .photo-full { display:block; width:100%; max-height:58dvh; object-fit:contain; border-radius:14px; background:#0d2530; margin:4px 0 10px; }
+.photo-modal .photo-hint { margin:0; font-size:.92rem; color:#cfe3ea; }
 .game-modal p { color:#ddcfba; }
 .game-close { position:absolute; top:10px; right:10px; width:44px; height:44px; border:0; background:transparent; color:#f7e6c7; font-size:1.8rem; cursor:pointer; }
 .game-over-backdrop { z-index:8; }
