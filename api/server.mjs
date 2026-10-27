@@ -31961,7 +31961,7 @@ var contentRouter = createRouter({
   // ── Preghiere: bacheca pubblica ──
   listPrayers: publicQuery.query(async () => {
     const db = getDb();
-    const rows = await db.select().from(prayerRequests).where(eq(prayerRequests.status, "approved")).orderBy(desc(prayerRequests.createdAt));
+    const rows = await db.select().from(prayerRequests).where(eq(prayerRequests.status, "approved")).orderBy(desc(prayerRequests.createdAt), desc(prayerRequests.id));
     return rows.map((r) => ({
       id: Number(r.id),
       title: r.title,
@@ -31992,7 +31992,7 @@ var contentRouter = createRouter({
   // Moderazione (solo Direttore GA)
   listPendingPrayers: adminQuery.query(async () => {
     const db = getDb();
-    const rows = await db.select().from(prayerRequests).where(eq(prayerRequests.status, "pending")).orderBy(desc(prayerRequests.createdAt));
+    const rows = await db.select().from(prayerRequests).where(eq(prayerRequests.status, "pending")).orderBy(desc(prayerRequests.createdAt), desc(prayerRequests.id));
     return rows.map((r) => ({ id: Number(r.id), title: r.title, body: r.body ?? "", author: r.authorName ?? "", color: r.color }));
   }),
   approvePrayer: adminQuery.input(external_exports.object({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
