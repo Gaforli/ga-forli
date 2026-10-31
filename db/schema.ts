@@ -143,3 +143,48 @@ export const gameRuns = pgTable("game_runs", {
 ]);
 
 export type GameRun = typeof gameRuns.$inferSelect;
+
+export const gratitudeKindEnum = pgEnum("gratitude_kind", ["annual", "special"]);
+export const gratitudeStatusEnum = pgEnum("gratitude_status", [
+  "pending",
+  "approved",
+  "discarded",
+]);
+
+export const gratitudeCollections = pgTable("gratitude_collections", {
+  id: serial("id").primaryKey(),
+  year: integer("year"), // NULL solo per raccolte straordinarie
+  label: varchar("label", { length: 120 }).notNull(),
+  kind: gratitudeKindEnum("kind").default("annual").notNull(),
+  introMessage: text("intro_message").notNull(),
+  isOpen: integer("is_open").default(0).notNull(),
+  openedAt: timestamp("opened_at", { mode: "date" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { mode: "date" })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+}, (table) => [
+  uniqueIndex("gratitude_collections_label_unique").on(table.label),
+  uniqueIndex("gratitude_collections_annual_year_unique").on(table.kind, table.year),
+]);
+
+export type GratitudeCollection = typeof gratitudeCollections.$inferSelect;
+
+export const gratitudeNotes = pgTable("gratitude_notes", {
+  id: serial("id").primaryKey(),
+  collectionId: integer("collection_id").notNull(),
+  clientToken: varchar("client_token", { length: 64 }).notNull(),
+  title: varchar("title", { length: 60 }).notNull().default(""),
+  body: text("body").notNull(),
+  signature: varchar("signature", { length: 30 }),
+  color: varchar("color", { length: 7 }).notNull().default("#F5DFA7"),
+  status: gratitudeStatusEnum("status").default("pending").notNull(),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  moderatedAt: timestamp("moderated_at", { mode: "date" }),
+}, (table) => [
+  uniqueIndex("gratitude_notes_token_unique").on(table.clientToken),
+  index("gratitude_notes_collection_status_idx").on(table.collectionId, table.status),
+]);
+
+export type GratitudeNote = typeof gratitudeNotes.$inferSelect;
