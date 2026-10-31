@@ -25624,6 +25624,10 @@ __export(schema_exports, {
   gameIdentities: () => gameIdentities,
   gameRuns: () => gameRuns,
   gameSessions: () => gameSessions,
+  gratitudeCollections: () => gratitudeCollections,
+  gratitudeKindEnum: () => gratitudeKindEnum,
+  gratitudeNotes: () => gratitudeNotes,
+  gratitudeStatusEnum: () => gratitudeStatusEnum,
   posterArchive: () => posterArchive,
   prayerRequests: () => prayerRequests,
   roleEnum: () => roleEnum,
@@ -29211,6 +29215,42 @@ var gameRuns = pgTable("game_runs", {
   index("game_runs_created_idx").on(table.createdAt),
   index("game_runs_rank_idx").on(table.score, table.perfects, table.createdAt)
 ]);
+var gratitudeKindEnum = pgEnum("gratitude_kind", ["annual", "special"]);
+var gratitudeStatusEnum = pgEnum("gratitude_status", [
+  "pending",
+  "approved",
+  "discarded"
+]);
+var gratitudeCollections = pgTable("gratitude_collections", {
+  id: serial("id").primaryKey(),
+  year: integer("year"),
+  // NULL solo per raccolte straordinarie
+  label: varchar("label", { length: 120 }).notNull(),
+  kind: gratitudeKindEnum("kind").default("annual").notNull(),
+  introMessage: text("intro_message").notNull(),
+  isOpen: integer("is_open").default(0).notNull(),
+  openedAt: timestamp("opened_at", { mode: "date" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull().$onUpdate(() => /* @__PURE__ */ new Date())
+}, (table) => [
+  uniqueIndex("gratitude_collections_label_unique").on(table.label),
+  uniqueIndex("gratitude_collections_annual_year_unique").on(table.kind, table.year)
+]);
+var gratitudeNotes = pgTable("gratitude_notes", {
+  id: serial("id").primaryKey(),
+  collectionId: integer("collection_id").notNull(),
+  clientToken: varchar("client_token", { length: 64 }).notNull(),
+  title: varchar("title", { length: 60 }).notNull().default(""),
+  body: text("body").notNull(),
+  signature: varchar("signature", { length: 30 }),
+  color: varchar("color", { length: 7 }).notNull().default("#F5DFA7"),
+  status: gratitudeStatusEnum("status").default("pending").notNull(),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  moderatedAt: timestamp("moderated_at", { mode: "date" })
+}, (table) => [
+  uniqueIndex("gratitude_notes_token_unique").on(table.clientToken),
+  index("gratitude_notes_collection_status_idx").on(table.collectionId, table.status)
+]);
 
 // ../../mnt/agents/output/app/node_modules/postgres/src/index.js
 import os from "os";
@@ -31700,6 +31740,36 @@ var valuesInput = external_exports.object({
   values: external_exports.record(external_exports.enum(VALUES_LANGS), valueItemInput)
 });
 var archiveMonthInput = external_exports.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Mese non valido");
+var GRATITUDE_COLORS = ["#F5DFA7", "#CFE0C3", "#F6C6C6", "#F9D9B8", "#CDE3EE"];
+var DEFAULT_GRATITUDE_INTRO = "Custodiamo i nostri grazie, per rileggerli insieme a fine anno o all'inizio del nuovo.";
+var GRATITUDE_JAR_CAPACITY = 50;
+var gratitudeSubmitInput = external_exports.object({
+  // Token generato dal client: rende l'invio idempotente (niente duplicati su retry/doppio tap).
+  clientToken: external_exports.string().min(8).max(64),
+  body: external_exports.string().trim().min(5, "Scrivi almeno 5 caratteri").max(500, "Massimo 500 caratteri"),
+  signature: external_exports.string().max(30).default(""),
+  anonymous: external_exports.boolean().default(false),
+  color: external_exports.enum(GRATITUDE_COLORS).default(GRATITUDE_COLORS[0])
+});
+function romeYear() {
+  return Number((/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "Europe/Rome", year: "numeric" }));
+}
+async function getOrCreateAnnualCollection(db, year2) {
+  const [found] = await db.select().from(gratitudeCollections).where(and(eq(gratitudeCollections.kind, "annual"), eq(gratitudeCollections.year, year2))).limit(1);
+  if (found) return found;
+  try {
+    await db.insert(gratitudeCollections).values({
+      year: year2,
+      label: `RACCOLTA ${year2}`,
+      kind: "annual",
+      introMessage: DEFAULT_GRATITUDE_INTRO
+    });
+  } catch {
+  }
+  const [created] = await db.select().from(gratitudeCollections).where(and(eq(gratitudeCollections.kind, "annual"), eq(gratitudeCollections.year, year2))).limit(1);
+  if (!created) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Raccolta non disponibile" });
+  return created;
+}
 var POSTIT_COLORS = ["#FFF3B8", "#DDE8C8", "#FFD9CF", "#FFE9B0", "#E3F0DA", "#FADCD5"];
 var prayerInput = external_exports.object({
   title: external_exports.string().min(1, "Titolo obbligatorio").max(120),
@@ -32003,6 +32073,139 @@ var contentRouter = createRouter({
   deletePrayer: adminQuery.input(external_exports.object({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
     const db = getDb();
     await db.delete(prayerRequests).where(eq(prayerRequests.id, input.id));
+    return { ok: true };
+  }),
+  // ── Barattolo della gratitudine ──
+  // Stato pubblico di una raccolta (default: anno corrente).
+  // Con barattolo CHIUSO il browser riceve solo id e colore dei bigliettini:
+  // testi e firme non lasciano mai il server finché il Direttore non apre la raccolta.
+  getGratitudePublic: publicQuery.input(external_exports.object({ collectionId: external_exports.number().int().positive().optional() }).optional()).query(async ({ input }) => {
+    const db = getDb();
+    let coll;
+    if (input?.collectionId) {
+      const [c] = await db.select().from(gratitudeCollections).where(eq(gratitudeCollections.id, input.collectionId)).limit(1);
+      if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Raccolta non trovata" });
+      coll = c;
+    } else {
+      coll = await getOrCreateAnnualCollection(db, romeYear());
+    }
+    const rows = await db.select().from(gratitudeNotes).where(and(eq(gratitudeNotes.collectionId, coll.id), eq(gratitudeNotes.status, "approved"))).orderBy(asc(gratitudeNotes.id));
+    const isOpen = coll.isOpen === 1;
+    return {
+      collection: {
+        id: Number(coll.id),
+        label: coll.label,
+        year: coll.year,
+        kind: coll.kind,
+        isOpen,
+        introMessage: coll.introMessage,
+        openedAt: coll.openedAt
+      },
+      capacity: GRATITUDE_JAR_CAPACITY,
+      count: rows.length,
+      isCurrent: coll.kind === "annual" && coll.year === romeYear(),
+      notes: rows.map((r) => isOpen ? { id: Number(r.id), body: r.body, signature: r.signature ?? "", color: r.color, createdAt: r.createdAt } : { id: Number(r.id), body: "", signature: "", color: r.color, createdAt: r.createdAt })
+    };
+  }),
+  // Elenco delle raccolte per il selettore annuali (conteggi approvati, niente testi).
+  listGratitudeCollections: publicQuery.query(async () => {
+    const db = getDb();
+    const colls = await db.select().from(gratitudeCollections).orderBy(desc(gratitudeCollections.year), desc(gratitudeCollections.id));
+    const counts = await db.select({
+      collectionId: gratitudeNotes.collectionId,
+      n: sql`count(*)`.mapWith(Number)
+    }).from(gratitudeNotes).where(eq(gratitudeNotes.status, "approved")).groupBy(gratitudeNotes.collectionId);
+    const byId = new Map(counts.map((c) => [Number(c.collectionId), c.n]));
+    return colls.map((c) => ({
+      id: Number(c.id),
+      label: c.label,
+      year: c.year,
+      kind: c.kind,
+      isOpen: c.isOpen === 1,
+      count: byId.get(Number(c.id)) ?? 0
+    }));
+  }),
+  // Invio aperto a tutti: il pensiero resta "pending" (invisibile pubblicamente)
+  // finché il Direttore GA non lo approva. Va sempre alla raccolta dell'anno corrente.
+  submitGratitude: publicQuery.input(gratitudeSubmitInput).mutation(async ({ input }) => {
+    const db = getDb();
+    const coll = await getOrCreateAnnualCollection(db, romeYear());
+    const token = input.clientToken.trim();
+    const [dup] = await db.select({ id: gratitudeNotes.id }).from(gratitudeNotes).where(eq(gratitudeNotes.clientToken, token)).limit(1);
+    if (dup) return { ok: true, duplicate: true };
+    const signature = input.anonymous ? null : input.signature.trim() || null;
+    try {
+      await db.insert(gratitudeNotes).values({
+        collectionId: Number(coll.id),
+        clientToken: token,
+        body: input.body.trim(),
+        signature,
+        color: input.color
+      });
+    } catch {
+      return { ok: true, duplicate: true };
+    }
+    return { ok: true, duplicate: false };
+  }),
+  // Moderazione (solo Direttore GA): testi completi di una raccolta per stato.
+  listGratitudeAdmin: adminQuery.input(external_exports.object({
+    collectionId: external_exports.number().int().positive(),
+    status: external_exports.enum(["pending", "approved", "discarded"])
+  })).query(async ({ input }) => {
+    const db = getDb();
+    const rows = await db.select().from(gratitudeNotes).where(and(eq(gratitudeNotes.collectionId, input.collectionId), eq(gratitudeNotes.status, input.status))).orderBy(desc(gratitudeNotes.createdAt), desc(gratitudeNotes.id));
+    return rows.map((r) => ({
+      id: Number(r.id),
+      body: r.body,
+      signature: r.signature ?? "",
+      color: r.color,
+      createdAt: r.createdAt,
+      moderatedAt: r.moderatedAt
+    }));
+  }),
+  // Approva e metti nel barattolo. Segnala se la raccolta è già aperta
+  // (il testo diventa subito leggibile ai visitatori).
+  approveGratitude: adminQuery.input(external_exports.object({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
+    const db = getDb();
+    const [note] = await db.select().from(gratitudeNotes).where(eq(gratitudeNotes.id, input.id)).limit(1);
+    if (!note) throw new TRPCError({ code: "NOT_FOUND", message: "Pensiero non trovato" });
+    await db.update(gratitudeNotes).set({ status: "approved", moderatedAt: /* @__PURE__ */ new Date() }).where(eq(gratitudeNotes.id, input.id));
+    const [coll] = await db.select().from(gratitudeCollections).where(eq(gratitudeCollections.id, note.collectionId)).limit(1);
+    return { ok: true, collectionOpen: coll ? coll.isOpen === 1 : false };
+  }),
+  // Scarta (dai "In attesa") o rimuovi dal barattolo (dagli "Approvati"):
+  // in entrambi i casi il pensiero finisce tra gli scartati e non è mai pubblico.
+  discardGratitude: adminQuery.input(external_exports.object({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
+    const db = getDb();
+    await db.update(gratitudeNotes).set({ status: "discarded", moderatedAt: /* @__PURE__ */ new Date() }).where(eq(gratitudeNotes.id, input.id));
+    return { ok: true };
+  }),
+  // Eliminazione definitiva: consentita solo per i pensieri già scartati.
+  deleteGratitude: adminQuery.input(external_exports.object({ id: external_exports.number().int().positive() })).mutation(async ({ input }) => {
+    const db = getDb();
+    const [note] = await db.select({ status: gratitudeNotes.status }).from(gratitudeNotes).where(eq(gratitudeNotes.id, input.id)).limit(1);
+    if (!note) throw new TRPCError({ code: "NOT_FOUND", message: "Pensiero non trovato" });
+    if (note.status !== "discarded") {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Puoi eliminare solo i pensieri scartati" });
+    }
+    await db.delete(gratitudeNotes).where(eq(gratitudeNotes.id, input.id));
+    return { ok: true };
+  }),
+  // Apertura/chiusura manuale del barattolo (lettura pubblica dei testi).
+  setGratitudeOpen: adminQuery.input(external_exports.object({ collectionId: external_exports.number().int().positive(), open: external_exports.boolean() })).mutation(async ({ input }) => {
+    const db = getDb();
+    const [coll] = await db.select().from(gratitudeCollections).where(eq(gratitudeCollections.id, input.collectionId)).limit(1);
+    if (!coll) throw new TRPCError({ code: "NOT_FOUND", message: "Raccolta non trovata" });
+    await db.update(gratitudeCollections).set(input.open ? { isOpen: 1, openedAt: /* @__PURE__ */ new Date() } : { isOpen: 0 }).where(eq(gratitudeCollections.id, input.collectionId));
+    return { ok: true };
+  }),
+  // Messaggio introduttivo della singola raccolta (max 500 caratteri, testo semplice).
+  saveGratitudeIntro: adminQuery.input(external_exports.object({
+    collectionId: external_exports.number().int().positive(),
+    introMessage: external_exports.string().trim().min(1, "Il messaggio non pu\xF2 essere vuoto").max(500, "Massimo 500 caratteri")
+  })).mutation(async ({ input }) => {
+    const db = getDb();
+    await db.update(gratitudeCollections).set({ introMessage: input.introMessage.trim() }).where(eq(gratitudeCollections.id, input.collectionId));
     return { ok: true };
   })
 });
