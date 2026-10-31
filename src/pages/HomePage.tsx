@@ -5,6 +5,7 @@ import { VERSES } from "@/i18n";
 import { upcomingEvents, dayOfYear } from "@/lib/utils";
 import EventDetailDialog from "@/components/EventDetailDialog";
 import EventPosterButton from "@/components/EventPosterButton";
+import { GratitudeJar } from "@/components/GratitudeJar";
 import type { AppEvent, Lang, Page } from "@/types";
 
 interface Props {
@@ -154,6 +155,12 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
       </section>
 
       <section className="hgrat" aria-labelledby="hgrat-title">
+        <div className="hgrat-jar" aria-hidden="true">
+          <GratitudeJar
+            notes={(gratQuery.data?.notes ?? []).slice(0, 12).map((n) => ({ id: n.id, color: n.color }))}
+            capacity={12}
+          />
+        </div>
         <div className="hgrat-info">
           <h3 id="hgrat-title">{t("home_grat_title")}</h3>
           <p>
