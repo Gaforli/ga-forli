@@ -738,7 +738,6 @@ button.gjar-note.sel { outline: 3px solid var(--color-primary); outline-offset: 
 .grat-sealed { text-align: center; color: var(--color-text-muted); font-size: .9rem; max-width: 460px; margin: 8px auto 0; }
 .grat-readbar { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
 .grat-add { display: flex; margin: 18px auto 0; }
-.grat-modnote { text-align: center; color: var(--color-text-muted); font-size: .82rem; max-width: 440px; margin: 10px auto 0; }
 .grat-counter { text-align: right; font-size: .78rem; color: var(--color-text-muted); margin-top: 4px; }
 .grat-ticket { border-radius: 6px; padding: 16px 18px; box-shadow: var(--shadow-md); position: relative; transform: rotate(-1.2deg); }
 .grat-ticket::after { content: ""; position: absolute; right: 0; top: 0; width: 34px; height: 26px; background: rgba(36,59,83,.08); border-radius: 0 6px 0 10px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
