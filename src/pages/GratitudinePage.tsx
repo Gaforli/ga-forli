@@ -149,7 +149,6 @@ export default function GratitudinePage({ t, lang, goPage }: Props) {
       <button className="btn btn-primary grat-add" onClick={openForm}>
         {t("grat_add")}
       </button>
-      <p className="grat-modnote">{t("grat_modnote")}</p>
 
       {/* ── Foglio: bigliettino singolo ── */}
       {readNote && (
