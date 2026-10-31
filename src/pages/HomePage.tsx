@@ -49,6 +49,7 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
   };
   // Anteprima delle prime 4 richieste di preghiera approvate per la card in home.
   const prayersQuery = trpc.content.listPrayers.useQuery();
+  const gratQuery = trpc.content.getGratitudePublic.useQuery(undefined);
   const prayerPreview = (prayersQuery.data ?? []).slice(0, 4);
 
   return (
@@ -148,6 +149,21 @@ export default function HomePage({ t, lang, goPage, icoCal, icoJoin }: Props) {
         )}
         <button className="hpray-cta" onClick={() => goPage("preghiere")}>
           <span>{t("home_pray_all")}</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg>
+        </button>
+      </section>
+
+      <section className="hgrat" aria-labelledby="hgrat-title">
+        <div className="hgrat-info">
+          <h3 id="hgrat-title">{t("home_grat_title")}</h3>
+          <p>
+            {gratQuery.data
+              ? <><b>{gratQuery.data.count}</b> {t("home_grat_count")}</>
+              : t("home_grat_desc")}
+          </p>
+        </div>
+        <button className="hgrat-cta" onClick={() => goPage("gratitudine")}>
+          <span>{t("home_grat_cta")}</span>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg>
         </button>
       </section>

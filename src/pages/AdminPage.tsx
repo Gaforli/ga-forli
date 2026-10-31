@@ -4,6 +4,7 @@ import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { CATS } from "@/i18n";
 import { fmtArchiveMonth, fmtDate } from "@/lib/utils";
+import GratitudeAdmin from "@/components/GratitudeAdmin";
 import type { Lang, Page, EventCategory, AppEvent } from "@/types";
 
 // Comprime l'immagine scelta dal Direttore GA (max 1400px, JPEG) e la
@@ -30,7 +31,7 @@ interface Props {
 export default function AdminPage({ t, lang, goPage }: Props) {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const isAdmin = isAuthenticated && user?.role === "admin";
-  const [tab, setTab] = useState<"ev" | "tema" | "posters" | "archive" | "monthly" | "prayers" | "values">("ev");
+  const [tab, setTab] = useState<"ev" | "tema" | "posters" | "archive" | "monthly" | "prayers" | "values" | "grat">("ev");
 
   const utils = trpc.useUtils();
   const eventsQuery = trpc.content.listEvents.useQuery(undefined, { enabled: isAdmin });
@@ -491,6 +492,7 @@ export default function AdminPage({ t, lang, goPage }: Props) {
         <button className={tab === "prayers" ? "on" : ""} onClick={() => setTab("prayers")}>
           {t("adm_prayers")}{(pendingPrayersQuery.data?.length ?? 0) > 0 ? ` (${pendingPrayersQuery.data!.length})` : ""}
         </button>
+        <button className={tab === "grat" ? "on" : ""} onClick={() => setTab("grat")}>{t("adm_grat")}</button>
       </div>
 
       {tab === "ev" && (
@@ -797,6 +799,8 @@ export default function AdminPage({ t, lang, goPage }: Props) {
         </div>
       )}
 
+
+      {tab === "grat" && <GratitudeAdmin t={t} lang={lang} />}
 
       {tab === "prayers" && (
         <div>
