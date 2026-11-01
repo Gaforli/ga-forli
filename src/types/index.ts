@@ -18,6 +18,9 @@ export type EventCategory =
   | "comunita"
   | "formazione";
 
+// Solo archivio locandine: locandina libera (non legata a un evento)
+export type ArchiveCategory = EventCategory | "libera";
+
 export interface AppEvent {
   id: number;
   date: string;
@@ -28,9 +31,10 @@ export interface AppEvent {
   image?: string;
 }
 
-export interface ArchivedPoster extends AppEvent {
+export interface ArchivedPoster extends Omit<AppEvent, "cat"> {
   eventId: number;
   archiveMonth: string;
+  cat: ArchiveCategory;
 }
 
 export interface TemaContent {
