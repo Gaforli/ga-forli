@@ -266,6 +266,40 @@ export const contentRouter = createRouter({
       return { ok: true };
     }),
 
+  // Locandina libera: caricata direttamente nell'archivio dal Direttore GA,
+  // senza essere legata a un evento (vale anche per l'attività del mese).
+  // Data facoltativa: se assente la locandina è "senza data" nel dialog.
+  archiveStandalonePoster: adminQuery
+    .input(z.object({
+      title: z.string().trim().min(1, "Titolo obbligatorio").max(255),
+      desc: z.string().max(2000).default(""),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data non valida").or(z.literal("")).default(""),
+      month: archiveMonthInput,
+      image: z.string().min(1, "Immagine obbligatoria").max(MAX_POSTER_CHARS),
+    }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      // eventId fittizio nel range alto (>= 1.000.000.000), lontano dagli id
+      // reali degli eventi: il vincolo unico su event_id resta rispettato e
+      // ogni locandina libera ha una riga propria.
+      const FREE_ID_BASE = 1_000_000_000;
+      const [maxRow] = await db.select({
+        m: sql<number>`coalesce(max(${posterArchive.eventId}), 0)`.mapWith(Number),
+      }).from(posterArchive);
+      const nextId = Math.max(FREE_ID_BASE, Number(maxRow?.m ?? 0) + 1);
+      await db.insert(posterArchive).values({
+        eventId: nextId,
+        archiveMonth: input.month,
+        eventDate: input.date,
+        eventTime: "",
+        title: input.title.trim(),
+        cat: "libera",
+        desc: input.desc,
+        image: input.image,
+      });
+      return { ok: true };
+    }),
+
   moveArchivedPoster: adminQuery
     .input(z.object({
       id: z.number().int().positive(),
