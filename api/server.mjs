@@ -25619,6 +25619,7 @@ async function verifySessionToken(token) {
 var schema_exports = {};
 __export(schema_exports, {
   adminAccounts: () => adminAccounts,
+  archiveCatEnum: () => archiveCatEnum,
   eventCatEnum: () => eventCatEnum,
   events: () => events,
   gameIdentities: () => gameIdentities,
@@ -29126,6 +29127,14 @@ var eventCatEnum = pgEnum("event_cat", [
   "comunita",
   "formazione"
 ]);
+var archiveCatEnum = pgEnum("archive_cat", [
+  "spiritualita",
+  "natura",
+  "musica",
+  "comunita",
+  "formazione",
+  "libera"
+]);
 var users = pgTable("users", {
   id: serial("id").primaryKey(),
   unionId: varchar("unionId", { length: 255 }).notNull().unique(),
@@ -29151,10 +29160,11 @@ var posterArchive = pgTable("poster_archive", {
   id: serial("id").primaryKey(),
   eventId: integer("event_id").notNull(),
   archiveMonth: varchar("archive_month", { length: 7 }).notNull(),
-  eventDate: varchar("event_date", { length: 10 }).notNull(),
+  // Data opzionale: vuota per le locandine libere (non legate a un evento)
+  eventDate: varchar("event_date", { length: 10 }).default("").notNull(),
   eventTime: varchar("event_time", { length: 5 }).default("").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
-  cat: eventCatEnum("cat").notNull(),
+  cat: archiveCatEnum("cat").notNull(),
   desc: text("desc"),
   image: text("image").notNull(),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
@@ -31903,6 +31913,33 @@ var contentRouter = createRouter({
         image: values2.image,
         updatedAt: values2.updatedAt
       }
+    });
+    return { ok: true };
+  }),
+  // Locandina libera: caricata direttamente nell'archivio dal Direttore GA,
+  // senza essere legata a un evento (vale anche per l'attività del mese).
+  // Data facoltativa: se assente la locandina è "senza data" nel dialog.
+  archiveStandalonePoster: adminQuery.input(external_exports.object({
+    title: external_exports.string().trim().min(1, "Titolo obbligatorio").max(255),
+    desc: external_exports.string().max(2e3).default(""),
+    date: external_exports.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data non valida").or(external_exports.literal("")).default(""),
+    month: archiveMonthInput,
+    image: external_exports.string().min(1, "Immagine obbligatoria").max(MAX_POSTER_CHARS),
+    // eventId negativo = copia archiviata separata, così non collide con
+    // l'eventuale locandina già archiviata per lo stesso evento.
+    eventId: external_exports.number().int().positive().optional()
+  })).mutation(async ({ input }) => {
+    const db = getDb();
+    const archiveId = -(input.eventId ?? Date.now());
+    await db.insert(posterArchive).values({
+      eventId: archiveId,
+      archiveMonth: input.month,
+      eventDate: input.date,
+      eventTime: "",
+      title: input.title.trim(),
+      cat: "libera",
+      desc: input.desc,
+      image: input.image
     });
     return { ok: true };
   }),
