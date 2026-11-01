@@ -3,11 +3,11 @@ import { trpc } from "@/providers/trpc";
 import EventDetailDialog from "@/components/EventDetailDialog";
 import EventPosterButton from "@/components/EventPosterButton";
 import { fmtArchiveMonth } from "@/lib/utils";
-import type { AppEvent, ArchivedPoster, Lang } from "@/types";
+import type { ArchivedPoster, Lang } from "@/types";
 
 export default function ArchivioLocandinePage({ t, lang }: { t: (key: string) => string; lang: Lang }) {
   const archiveQuery = trpc.content.listPosterArchive.useQuery();
-  const [selected, setSelected] = useState<AppEvent | null>(null);
+  const [selected, setSelected] = useState<ArchivedPoster | null>(null);
   const groups = useMemo(() => {
     const byMonth = new Map<string, ArchivedPoster[]>();
     for (const poster of archiveQuery.data ?? []) {

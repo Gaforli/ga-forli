@@ -118,6 +118,62 @@ export default function AdminPage({ t, lang, goPage }: Props) {
     archivePoster.mutate({ eventId: archiveEventId, month: archiveMonth });
   };
 
+  // ── Locandina libera: archiviata senza evento (anche per l'attività del mese) ──
+  const [freeTitle, setFreeTitle] = useState("");
+  const [freeDesc, setFreeDesc] = useState("");
+  const [freeDate, setFreeDate] = useState("");
+  const [freeMonth, setFreeMonth] = useState("");
+  const [freeImg, setFreeImg] = useState<string | null>(null);
+  const [freeLoading, setFreeLoading] = useState(false);
+  const [freeMsg, setFreeMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  const archiveStandalone = trpc.content.archiveStandalonePoster.useMutation({
+    onSuccess: () => {
+      archiveSaved(t("adm_archive_done"));
+      setFreeTitle(""); setFreeDesc(""); setFreeDate(""); setFreeMonth(""); setFreeImg(null);
+      setFreeMsg({ text: t("adm_archive_done"), ok: true });
+      setTimeout(() => setFreeMsg(null), 3500);
+    },
+    onError: () => setFreeMsg({ text: t("adm_archive_err"), ok: false }),
+  });
+
+  const pickFreeImg = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setFreeLoading(true);
+    try { setFreeImg(await fileToPosterDataUrl(file)); } catch { /* ignore */ }
+    setFreeLoading(false);
+  };
+
+  const submitFreePoster = () => {
+    if (!freeTitle.trim() || !freeMonth || !freeImg) {
+      setFreeMsg({ text: t("adm_archive_free_fill"), ok: false });
+      return;
+    }
+    setFreeMsg(null);
+    archiveStandalone.mutate({
+      title: freeTitle.trim(),
+      desc: freeDesc.trim(),
+      date: freeDate,
+      month: freeMonth,
+      image: freeImg,
+    });
+  };
+
+  // Prefill dalla scheda "Attività del mese": archivia la locandina corrente.
+  const startArchiveMonthly = () => {
+    if (!monthlyQuery.data?.image) return;
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    setFreeTitle(t("adm_monthly"));
+    setFreeDesc(""); setFreeDate(""); setFreeMonth(month);
+    setFreeImg(monthlyQuery.data.image);
+    setFreeMsg(null);
+    setTab("archive");
+    setTimeout(() => document.getElementById("freeTitle")?.focus({ preventScroll: false }), 0);
+  };
+
   // ── Locandine home (multiple, carosello sopra i Prossimi eventi) ──
   const [postersList, setPostersList] = useState<string[]>([]);
   const [postersLoaded, setPostersLoaded] = useState(false);
@@ -719,6 +775,40 @@ export default function AdminPage({ t, lang, goPage }: Props) {
             {archiveMsg && <span role="status" className="savedmsg" style={archiveMsg.ok ? {} : { color: "var(--color-danger)" }}>{archiveMsg.text}</span>}
           </form>
 
+          <form
+            className="formcard"
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitFreePoster();
+            }}
+          >
+            <h4>{t("adm_archive_free")}</h4>
+            <p className="sub" style={{ marginBottom: 14 }}>{t("adm_archive_free_d")}</p>
+            <label className="flabel" htmlFor="freeTitle">{t("adm_archive_free_title")}</label>
+            <input className="finput" id="freeTitle" maxLength={255} value={freeTitle} onChange={(e) => setFreeTitle(e.target.value)} placeholder={t("adm_archive_free_title_ph")} />
+            <label className="flabel" htmlFor="freeDesc">{t("f_desc")}</label>
+            <textarea className="ftext" id="freeDesc" maxLength={2000} style={{ minHeight: 70 }} value={freeDesc} onChange={(e) => setFreeDesc(e.target.value)} placeholder={t("f_desc_ph")} />
+            <label className="flabel" htmlFor="freeDate">{t("adm_archive_free_date")}</label>
+            <input className="finput" id="freeDate" type="date" value={freeDate} onChange={(e) => setFreeDate(e.target.value)} />
+            <label className="flabel" htmlFor="freeMonth">{t("adm_archive_month")}</label>
+            <input className="finput" id="freeMonth" type="month" value={freeMonth} onChange={(e) => setFreeMonth(e.target.value)} required />
+            <label className="flabel" htmlFor="freeFile">{t("adm_poster_new")}</label>
+            <input className="finput" id="freeFile" type="file" accept="image/*" onChange={pickFreeImg} />
+            {freeLoading && <p className="sub" style={{ margin: "6px 0" }}>{t("adm_loading")}</p>}
+            {freeImg && (
+              <>
+                <span className="flabel" style={{ marginTop: 10 }}>{t("adm_poster_prev")}</span>
+                <div className="postercard" style={{ margin: "6px 0 12px" }}>
+                  <img src={freeImg} alt={t("adm_poster_prev")} />
+                </div>
+              </>
+            )}
+            <div className="eventform-actions">
+              <button className="savebtn" type="submit" disabled={archiveStandalone.isPending || freeLoading || !freeImg}>{t("adm_archive_save")}</button>
+            </div>
+            {freeMsg && <span role="status" className="savedmsg" style={freeMsg.ok ? {} : { color: "var(--color-danger)" }}>{freeMsg.text}</span>}
+          </form>
+
           <div className="formcard">
             <h4>{t("adm_archive_stored")}</h4>
             {archiveQuery.isLoading && <p className="sub">{t("adm_loading")}</p>}
@@ -730,7 +820,7 @@ export default function AdminPage({ t, lang, goPage }: Props) {
                   <img className="archive-admin-thumb" src={item.image} alt="" />
                   <div className="archive-admin-main">
                     <b>{item.title}</b>
-                    <small>{fmtDate(item.date, item.time, lang)} · {fmtArchiveMonth(item.archiveMonth, lang)}</small>
+                    <small>{item.date ? fmtDate(item.date, item.time, lang) : t("event_nodate")} · {fmtArchiveMonth(item.archiveMonth, lang)}</small>
                     <label htmlFor={`archive-month-${item.id}`}>{t("adm_archive_month")}</label>
                     <input
                       id={`archive-month-${item.id}`}
@@ -791,9 +881,14 @@ export default function AdminPage({ t, lang, goPage }: Props) {
             </>
           )}
           {!monthlyImg && monthlyQuery.data?.image && (
-            <button className="logoutbtn" onClick={removeMonthly} disabled={saveMonthly.isPending}>
-              {t("adm_poster_del")}
-            </button>
+            <>
+              <button className="savebtn" style={{ width: "auto", padding: "10px 20px", marginRight: 10 }} onClick={startArchiveMonthly}>
+                {t("adm_archive_monthly_btn")}
+              </button>
+              <button className="logoutbtn" onClick={removeMonthly} disabled={saveMonthly.isPending}>
+                {t("adm_poster_del")}
+              </button>
+            </>
           )}
           {monthlyMsg && <span className="savedmsg" style={monthlyMsg.ok ? {} : { color: "var(--color-danger)" }}>{monthlyMsg.text}</span>}
         </div>
