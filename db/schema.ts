@@ -18,6 +18,15 @@ export const eventCatEnum = pgEnum("event_cat", [
   "comunita",
   "formazione",
 ]);
+// Solo archivio: locandine libere (non legate a un evento)
+export const archiveCatEnum = pgEnum("archive_cat", [
+  "spiritualita",
+  "natura",
+  "musica",
+  "comunita",
+  "formazione",
+  "libera",
+]);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -57,10 +66,11 @@ export const posterArchive = pgTable("poster_archive", {
   id: serial("id").primaryKey(),
   eventId: integer("event_id").notNull(),
   archiveMonth: varchar("archive_month", { length: 7 }).notNull(),
-  eventDate: varchar("event_date", { length: 10 }).notNull(),
+  // Data opzionale: vuota per le locandine libere (non legate a un evento)
+  eventDate: varchar("event_date", { length: 10 }).default("").notNull(),
   eventTime: varchar("event_time", { length: 5 }).default("").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
-  cat: eventCatEnum("cat").notNull(),
+  cat: archiveCatEnum("cat").notNull(),
   desc: text("desc"),
   image: text("image").notNull(),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
