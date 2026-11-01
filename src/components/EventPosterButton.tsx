@@ -1,10 +1,10 @@
 import { CATS, EVENT_IMG } from "@/i18n";
 import { fmtDate } from "@/lib/utils";
-import type { AppEvent, Lang } from "@/types";
+import type { AppEvent, ArchivedPoster, Lang } from "@/types";
 
 interface Props {
-  event: AppEvent;
-  onOpen: (event: AppEvent) => void;
+  event: AppEvent | ArchivedPoster;
+  onOpen: (event: AppEvent | ArchivedPoster) => void;
   t: (key: string) => string;
   lang: Lang;
 }
@@ -26,7 +26,7 @@ export default function EventPosterButton({ event, onOpen, t, lang }: Props) {
       <span className="eventposter-caption">
         <span className="eventposter-meta">
           <span className="eventposter-cat"><i style={{ background: CATS[event.cat].color }} />{t("cat_" + event.cat)}</span>
-          <span>{fmtDate(event.date, event.time, lang)}</span>
+          <span>{event.date ? fmtDate(event.date, event.time, lang) : t("event_nodate")}</span>
         </span>
         <span className="eventposter-title">{event.title}</span>
         <span className="eventposter-more">{t("event_open")} <span aria-hidden="true">→</span></span>
