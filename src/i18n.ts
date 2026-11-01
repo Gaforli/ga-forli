@@ -134,6 +134,13 @@ export const I18N: Record<Lang, Record<string, string>> = {
     adm_grat_close_btn: "Richiudi il barattolo",
     adm_grat_close_confirm: "Richiudere il barattolo? I bigliettini torneranno nascosti, ma ciò che è già stato letto non viene annullato.",
     adm_grat_open_warn: "Attenzione: la raccolta è aperta, questo pensiero è subito leggibile dai visitatori.",
+    cat_libera: "Locandina", event_nodate: "Senza data",
+    adm_archive_free: "Archivia una locandina libera",
+    adm_archive_free_d: "Per locandine non legate a un evento, comprese le attività del mese.",
+    adm_archive_free_title: "Titolo della locandina", adm_archive_free_title_ph: "Es. Attività del mese di novembre",
+    adm_archive_free_date: "Data (facoltativa)",
+    adm_archive_free_fill: "Compila titolo, mese e scegli un'immagine.",
+    adm_archive_monthly_btn: "Archivia nell'archivio",
     adm_approve: "Approva",
   },
   en: {
@@ -269,6 +276,13 @@ export const I18N: Record<Lang, Record<string, string>> = {
     adm_grat_close_btn: "Close the jar",
     adm_grat_close_confirm: "Close the jar? The notes will be hidden again, but what has already been read cannot be undone.",
     adm_grat_open_warn: "Warning: the collection is open, this thought is immediately readable by visitors.",
+    cat_libera: "Poster", event_nodate: "No date",
+    adm_archive_free: "Archive a standalone poster",
+    adm_archive_free_d: "For posters not linked to an event, including the activity of the month.",
+    adm_archive_free_title: "Poster title", adm_archive_free_title_ph: "E.g. Activity of the month of November",
+    adm_archive_free_date: "Date (optional)",
+    adm_archive_free_fill: "Fill in title, month and choose an image.",
+    adm_archive_monthly_btn: "Save to archive",
     adm_approve: "Approve",
   },
   es: {
@@ -404,6 +418,13 @@ export const I18N: Record<Lang, Record<string, string>> = {
     adm_grat_close_btn: "Cerrar el tarro",
     adm_grat_close_confirm: "¿Cerrar el tarro? Las notas volverán a ocultarse, pero lo ya leído no se deshace.",
     adm_grat_open_warn: "Atención: la colección está abierta, este pensamiento es inmediatamente legible por los visitantes.",
+    cat_libera: "Cartel", event_nodate: "Sin fecha",
+    adm_archive_free: "Archivar un cartel libre",
+    adm_archive_free_d: "Para carteles no vinculados a un evento, incluidas las actividades del mes.",
+    adm_archive_free_title: "Título del cartel", adm_archive_free_title_ph: "Ej. Actividad del mes de noviembre",
+    adm_archive_free_date: "Fecha (opcional)",
+    adm_archive_free_fill: "Completa título, mes y elige una imagen.",
+    adm_archive_monthly_btn: "Guardar en el archivo",
     adm_approve: "Aprobar",
   },
   pt: {
@@ -539,6 +560,13 @@ export const I18N: Record<Lang, Record<string, string>> = {
     adm_grat_close_btn: "Fechar o pote",
     adm_grat_close_confirm: "Fechar o pote? Os bilhetes ficam novamente ocultos, mas o que já foi lido não é anulado.",
     adm_grat_open_warn: "Atenção: a coleção está aberta, este pensamento fica imediatamente legível pelos visitantes.",
+    cat_libera: "Cartaz", event_nodate: "Sem data",
+    adm_archive_free: "Arquivar um cartaz livre",
+    adm_archive_free_d: "Para cartazes não ligados a um evento, incluindo as atividades do mês.",
+    adm_archive_free_title: "Título do cartaz", adm_archive_free_title_ph: "Ex. Atividade do mês de novembro",
+    adm_archive_free_date: "Data (opcional)",
+    adm_archive_free_fill: "Preencha título, mês e escolha uma imagem.",
+    adm_archive_monthly_btn: "Guardar no arquivo",
     adm_approve: "Aprovar",
   },
 };
@@ -577,6 +605,7 @@ export const CATS: Record<string, { color: string }> = {
   musica: { color: "#F2D27D" },
   comunita: { color: "#E8A487" },
   formazione: { color: "#A9C9DC" },
+  libera: { color: "#7A8794" },
 };
 
 export const EVENT_IMG: Record<string, string> = {
@@ -585,4 +614,5 @@ export const EVENT_IMG: Record<string, string> = {
   comunita: "assets/ev_comunita.jpg",
   spiritualita: "assets/ev_musica.jpg",
   formazione: "assets/ev_natura.jpg",
+  libera: "assets/ev_comunita.jpg",
 };
